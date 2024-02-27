@@ -84,10 +84,18 @@ class polynomial():
                 newCoefficients.append(other.coefficients[i + other.order()])
         return polynomial(coefficients = newCoefficients)
     
+    def minus(self, other):
+        return self.plus(other)
+    
 
     def lift(self, liftBy):
         for i in range(liftBy):
             self.coefficients.append(binaryFieldElement(0))
+        return self
+    
+    def timesScalar(self, gfScalar):
+        for j in range(len(self.coefficients)):
+            self.coefficients[j] = self.coefficients[j].times(gfScalar)
         return self
     
     def times(self, other):
@@ -96,9 +104,8 @@ class polynomial():
             fieldElement = other.coefficients[i]
             temp = polynomial(self.coefficients)
             temp.lift(len(other.coefficients) - i)
-            for j in range(len(temp.coefficients)):
-                temp.coefficients[j] = temp.coefficients[j].times(fieldElement)
-            return polynomial(coefficients = newCoefficients)        
+            temp.timesScalar(fieldElement)        
+        return polynomial(coefficients = newCoefficients)        
                 
 def test_constructor():
     p1 = polynomial([1,0,0])
@@ -117,4 +124,13 @@ def test_truncate():
     p1 = polynomial([0,1,0,0])
     p1.truncate()
     assert np.all(p0.coefficients == p1.coefficients)
+    return 'OK'
+
+def test_plus():
+    p0 = polynomial([1,0,0])
+    p1 = polynomial([0,1,1])
+    p2 = polynomial([1,1,1])
+    assert(np.all(p0.plus(p1).coefficients == [1,1,1]))
+    assert(np.all(p1.plus(p2).coefficients == [1,0,0]))
+    assert(np.all(p2.plus(p0).coefficients == [0,1,1]))
     return 'OK'
