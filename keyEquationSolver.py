@@ -23,11 +23,11 @@ def keyEquationSolver(polynomialClass, galoisElement, syndromes):
              l = l + 1
          else:
              if ((2 * L) >= k):
-                 cX = cX.minus(pX.times((discrepancy.times(oldDiscrepancy.inverse()))))
+                 cX = cX.minus(pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse()))))
                  l = l + 1
              else:
                  tX = cX
-                 cX = cX.minus(pX.times((discrepancy.times(oldDiscrepancy.inverse()))))
+                 cX = cX.minus(pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse()))))
                  L = k - L
                  pX = tX
                  oldDiscrepancy = discrepancy

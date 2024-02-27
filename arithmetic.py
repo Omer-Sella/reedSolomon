@@ -94,9 +94,10 @@ class polynomial():
         return self
     
     def timesScalar(self, gfScalar):
+        newCoefficients = copy.deepcopy(self.coefficients)
         for j in range(len(self.coefficients)):
-            self.coefficients[j] = self.coefficients[j].times(gfScalar)
-        return self
+            newCoefficients[j] = newCoefficients[j].times(gfScalar)
+        return polynomial(newCoefficients)
     
     def times(self, other):
         newCoefficients = []
@@ -133,4 +134,12 @@ def test_plus():
     assert(np.all(p0.plus(p1).coefficients == [1,1,1]))
     assert(np.all(p1.plus(p2).coefficients == [1,0,0]))
     assert(np.all(p2.plus(p0).coefficients == [0,1,1]))
+    return 'OK'
+
+def timesScalar():
+    p0 = polynomial(np.random.randint(0,2,100))
+    scalar1 = binaryFieldElement(0)
+    scalar2 = binaryFieldElement(1)
+    assert (np.all(p0.timesScalar(scalar1).coefficients == p0.coefficients))
+    assert (np.all(p0.timesScalar(scalar2).coefficients == (0 * p0.coefficients)))
     return 'OK'
