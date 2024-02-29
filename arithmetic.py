@@ -5,6 +5,7 @@ Created on Tue Feb 27 11:36:27 2024
 @author: Omer
 """
 import numpy as np
+import copy
 class binaryFieldElement:
     def __init__(self, value = None):
         if value == 0 or value == 1:
