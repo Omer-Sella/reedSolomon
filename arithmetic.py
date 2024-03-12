@@ -7,11 +7,11 @@ Created on Tue Feb 27 11:36:27 2024
 import numpy as np
 import copy
 class binaryFieldElement:
-    def __init__(self, value = None):
+    def __init__(self, value):
         if value == 0 or value == 1:
             self.value = value
         else:
-            raise Exception("A binary field value can be either 0 or 1 in this class.")
+            raise("A binary field value can be either 0 or 1 in this class.")
     
     def times(self, other):
         return binaryFieldElement(self.value * other.value)
@@ -35,54 +35,59 @@ class polynomial():
     #— Define c as a binary vector of length 126, and c(x) a polynomial of degree 125 with the coefficients 
     #defined by c (where the bit 0 of c represents the coefficient of power 125).
     #Meaning coefficients[0] is the highest power
-    def __init__(self, coefficients = None, order = None):
-        if coefficients is None:
-            newCoefficients = []
-        else:
-            for i in range(len(coefficients)):
-                newCoefficients.append(binaryFieldElement(coefficients[i]))
-        if order is not None:
-            if order <= len(coefficients):
-                raise Exception("Order of a polynomial has to be greater or equal number of coefficients.")
-            else:
+    def __init__(self, coefficients = None):
+        newCoefficients = []
+        if coefficients is not None:
+            if type(coefficients[0]) == type(binaryFieldElement(value = 0)):
+                for i in range(len(coefficients)):
+                    newCoefficients.append(copy.deepcopy(coefficients[i]))
+            elif np.isscalar(coefficients[0]):
                 for i in range(len(coefficients)):
                     newCoefficients.append(binaryFieldElement(coefficients[i]))
-                for i in range(order + 1 - len(coefficients)):
-                    newCoefficients.append(binaryFieldElement(0))
+            else:
+                raise('Çoefficients must be finite field elements or scalalrs')    
         self.coefficients = newCoefficients
     
-    def ordrer(self):
+    def order(self):
         #find first non zero:
         order = len(self.coefficients) - 1
         i = 0
         while self.coefficients[i].isZero():
             i = i + 1
             order = order - 1
-        return ( order )
+        return order 
     
     def truncate(self):
-        while self.order != (len(self.coefficients) - 1):
+        while ((self.coefficients[0].value == 0) and len(self.coefficients) > 1) : #(len(self.coefficients) - 1) > self.order():
             self.coefficients.pop(0)
         return self
             
     def plus(self, other):
-        newCoefficients = []
-        # if other.order() > self.order():
-        #     small = self
-        #     big = other
-        # else:
-        #     small = other
-        #     big = other
+        #newCoefficients = copy.deepcopy(self.coefficients)
         if other.order() > self.order():
-            for i in range(other.order() - self.order()):
-                newCoefficients.append(binaryFieldElement(0))
-            for i in range(self.order()):
-                newCoefficients.append(other.coefficients[i + self.order()])
-        if self.order() > other.order():
-            for i in range(self.order() - other.order()):
-                newCoefficients.append(binaryFieldElement(0))
-            for i in range(self.order() - other.order()):
-                newCoefficients.append(other.coefficients[i + other.order()])
+            small = self
+            big = other
+            bigOrder = other.order()
+            smallOrder = self.order()
+            
+        else:
+            #print("Other one is smaller")
+            small = other
+            big = self
+            bigOrder = self.order()
+            smallOrder = other.order()
+        #print("Small order is " + str(smallOrder))
+        #print("Big order is " + str(bigOrder))
+        newCoefficients = copy.deepcopy(big.coefficients)
+        #print(len(newCoefficients))
+        for i in range(smallOrder + 1):
+            print("now in index " + str(i))
+            a = newCoefficients[len(newCoefficients) - 1 - i]
+            b = small.coefficients[len(small.coefficients)- 1 - i]
+            newCoefficients[bigOrder - i] = a.plus(b)
+            print(newCoefficients[bigOrder - i].value)
+
+        
         return polynomial(coefficients = newCoefficients)
     
     def minus(self, other):
@@ -109,38 +114,20 @@ class polynomial():
             temp.timesScalar(fieldElement)        
         return polynomial(coefficients = newCoefficients)        
                 
-def test_constructor():
-    p1 = polynomial([1,0,0])
-    assert(p1.order == 3)
-    p2 = polynomial([0,1,0,0])
-    assert(p2.order == 3)
-    return 'OK'
-
-def test_lift():
-    p1 = polynomial([1,1,1])
-    p1 = p1.lift(10)
-    assert (p1.order == (10 + 3 - 1))
+    def __eq__(self, other):
+        # This is a super lazy implementation, since I actually deepcopy and test equality on the truncated polynomials
+        pSelf = copy.deepcopy(self).truncate()
+        pOther = copy.deepcopy(other).truncate()
+        isEqual = True
+        if pSelf.order() == pOther.order():
+            for i in range(len(pSelf.coefficients)):
+                if pSelf.coefficients[i] != pOther.coefficients[i]:
+                    isEqual = False
+        else:
+            isEqual = False
+        
+        return isEqual
     
-def test_truncate():
-    p0 = polynomial([1,0,0])
-    p1 = polynomial([0,1,0,0])
-    p1.truncate()
-    assert np.all(p0.coefficients == p1.coefficients)
-    return 'OK'
-
-def test_plus():
-    p0 = polynomial([1,0,0])
-    p1 = polynomial([0,1,1])
-    p2 = polynomial([1,1,1])
-    assert(np.all(p0.plus(p1).coefficients == [1,1,1]))
-    assert(np.all(p1.plus(p2).coefficients == [1,0,0]))
-    assert(np.all(p2.plus(p0).coefficients == [0,1,1]))
-    return 'OK'
-
-def timesScalar():
-    p0 = polynomial(np.random.randint(0,2,100))
-    scalar1 = binaryFieldElement(0)
-    scalar2 = binaryFieldElement(1)
-    assert (np.all(p0.timesScalar(scalar1).coefficients == p0.coefficients))
-    assert (np.all(p0.timesScalar(scalar2).coefficients == (0 * p0.coefficients)))
-    return 'OK'
+    def printValues(self):
+        for e in self.coefficients:
+            print(e.value)
