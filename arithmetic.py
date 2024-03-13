@@ -29,6 +29,12 @@ class binaryFieldElement:
     
     def isZero(self):
         return (self.value == 0)
+    
+    def __add__(self, other):
+        return self.plus(other)
+    
+    def __sub__(self, other):
+        return self.minus(other)
 
 class polynomial():
     # From draft dj_d0p1:
@@ -127,6 +133,12 @@ class polynomial():
             isEqual = False
         
         return isEqual
+    
+    def __add__(self, other):
+        return(self.plus(other))
+    
+    def __sub__(self, other):
+        return(self.minus(other))
     
     def printValues(self):
         for e in self.coefficients:
