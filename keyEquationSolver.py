@@ -19,31 +19,30 @@ def keyEquationSolver(polynomialClass, galoisElement, syndromes):
          K = k + 1
          discrepancy = galoisElement(value = syndromes[k])
          for i in range(L):
-             discrepancy = discrepancy + cX[i].times((syndromes[K-i]))
+             print("i == " + str(i))
+             discrepancy = discrepancy + cX.coefficients[i].times((galoisElement(syndromes[K-i])))
          # ???discrepancy = syndromes + discrepancy
          if discrepancy.isZero():
              l = l + 1
          else:
-             if (2 * L) >= K: #Note the fix k --> K
-                 cX = cX.minus(pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse()))))
+             if (2 * L) >= K: #Note the fix k replaced with K
+                 cX = cX - (pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse())))).lift(l)
                  l = l + 1
              else:
                  tX = cX
-                 cX = cX - pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse())))
+                 cX = cX - (pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse())))).lift(l)
                  L = K - L
                  pX = tX
                  oldDiscrepancy = discrepancy
                  l = 1
-         print("k == " + str(k))
-         print("syndromes[k] == " + str(syndromes[k]))
-         print("disc == "+ str(discrepancy.value))
-         print("L == " + str(L))
+         print("| K | syndromes[k] | disc | l  | L   | old discrepancy |")
+         print("| %d | %d            | %d    | %d  | %d   | %d              |" % (K, syndromes[k], discrepancy.value, l, L,  oldDiscrepancy.value))
+         
          print("c(x) == ")
          cX.printValues()
          print("p(x) == ")
          pX.printValues()
-         print("l == " + str(l))
-         print("discrepency old == " + str(oldDiscrepancy.value))
+         
         
      return cX
 
@@ -59,6 +58,15 @@ def berlekampMassey():
 def test_keyEquationSolver():
     #Testing the Todd K. Moon version using example on page 281 (laboratory 6 ex. 2)
     # As well as table 6.5 on page 259
+    #|K | S[k] | discrepancyK | cX          | L | pX   | l | oldDiscrepancy
+    #|1 | 1    | 1            | 1+x         | 1 | 1    | 1 | 1
+    #|2 | 1    | 0            | 1+x         | 1 | 1    | 1 | 1
+    #|3 | 1    | 0            | 1+x         | 1 | 1    | 1 | 1
+    #|4 | 0    | 1            | 1+x+x^3     | 3 | 1+x  | 1 | 1
+    #|5 | 1    | 0            | 1+x+x^3     | 3 | 1+x  | 1 | 1
+    #|6 | 0    | 0            | 1+x+x^3     | 3 | 1+x  | 1 | 1
+    #|7 | 0    | 0            | 1+x+x^3     | 3 | 1+x  | 1 | 1
+
     import numpy as np
     #r = np.array([0,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0]) #This is equivalent to r(x) = x + x^3 + x^8
     syndromes = np.array([ 1, 1, 1 , 0, 1 , 0, 0])

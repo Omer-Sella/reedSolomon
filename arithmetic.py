@@ -56,9 +56,10 @@ class polynomial():
     
     def order(self):
         #find first non zero:
-        order = len(self.coefficients) - 1
+        length = len(self.coefficients)
+        order = length - 1
         i = 0
-        while self.coefficients[i].isZero():
+        while (i < length) and self.coefficients[i].isZero():
             i = i + 1
             order = order - 1
         return order 
@@ -69,7 +70,6 @@ class polynomial():
         return self
             
     def plus(self, other):
-        #newCoefficients = copy.deepcopy(self.coefficients)
         if other.order() > self.order():
             small = self
             big = other
@@ -77,23 +77,15 @@ class polynomial():
             smallOrder = self.order()
             
         else:
-            #print("Other one is smaller")
             small = other
             big = self
             bigOrder = self.order()
             smallOrder = other.order()
-        #print("Small order is " + str(smallOrder))
-        #print("Big order is " + str(bigOrder))
         newCoefficients = copy.deepcopy(big.coefficients)
-        #print(len(newCoefficients))
         for i in range(smallOrder + 1):
-            print("now in index " + str(i))
             a = newCoefficients[len(newCoefficients) - 1 - i]
             b = small.coefficients[len(small.coefficients)- 1 - i]
             newCoefficients[bigOrder - i] = a.plus(b)
-            print(newCoefficients[bigOrder - i].value)
-
-        
         return polynomial(coefficients = newCoefficients)
     
     def minus(self, other):
@@ -141,5 +133,5 @@ class polynomial():
         return(self.minus(other))
     
     def printValues(self):
-        for e in self.coefficients:
-            print(e.value)
+        for element in self.coefficients:
+            print(element.value)
