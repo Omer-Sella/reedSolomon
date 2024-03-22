@@ -6,6 +6,10 @@ Created on Tue Feb 27 11:36:27 2024
 """
 import numpy as np
 import copy
+"""
+This file contains some ad-hoc arithmetic over the binary field.
+"""
+
 class binaryFieldElement:
     def __init__(self, value):
         if value == 0 or value == 1:
@@ -110,7 +114,27 @@ class polynomial():
             temp = polynomial(self.coefficients)
             temp.lift(len(other.coefficients) - i)
             temp.timesScalar(fieldElement)        
-        return polynomial(coefficients = newCoefficients)        
+        return polynomial(coefficients = newCoefficients)  
+
+    def ignoreFromDegree(self, degreeToTruncateFrom):
+        newCoefficients = self.coefficients[0 : (degreeToTruncateFrom + 1)]
+        return polynomial(coefficients = newCoefficients)
+        
+    def d(self):
+        # This only works over GF(2):
+        if len(self.coefficients) % 2 == 0:
+            length = len(self.coefficients)
+        else:
+            length = len(self.coefficients) + 1
+        mask = np.arange(0, length, 2)
+        newCoefficients = copy.deepcopy(self.coefficients)
+        # Indices with even power will have zero contribution to the derivative over GF(2)
+        newCoefficients[mask] = 0
+        #Now reduce the degree of every mono by 1
+        newCoefficients.pop()
+        return polynomial(newCoefficients)
+            
+        
                 
     def __eq__(self, other):
         # This is a super lazy implementation, since I actually deepcopy and test equality on the truncated polynomials
@@ -131,6 +155,9 @@ class polynomial():
     
     def __sub__(self, other):
         return(self.minus(other))
+    
+    def __mul__(self, other):
+        return self.times(other)
     
     def printValues(self):
         for element in self.coefficients:

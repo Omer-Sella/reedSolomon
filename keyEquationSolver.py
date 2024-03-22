@@ -53,6 +53,18 @@ def keyEquationSolver(polynomialClass, galoisElement, syndromes):
          
         
      return cX
+ 
+def findErrorEvaluator(syndromesPolynomial, connectionPolynomial, t):
+    omegaX = syndromesPolynomial * connectionPolynomial
+    omegaX = omegaX.ignoreFromDegree(2 * t)
+    return omegaX
 
 
+def forney(errorEvaluatorPolynomial, errorConnectionPolynomiol, listOfElements):
+    errorConnectionPolynomiolDerivative = errorConnectionPolynomiol.d()
+    errorValues = []
+    for element in listOfElements:
+        # Note that over GF(2) minus and plus are the same, and that the following term should have a minus sign in the non binary case.
+        errorValues.append(errorConnectionPolynomiolDerivative.at(element).inverse() * errorEvaluatorPolynomial(element))
+    return errorValues
     
