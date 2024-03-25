@@ -23,7 +23,7 @@ def test_keyEquationSolver():
     syndromes = np.array([ 1, 1, 1 , 0, 1 , 0, 0])
     #syndromes = np.array([ 0,0,1,0,1,1,1])
     cX = keyEquationSolver(polynomialClass, galoisElement, syndromes)
-    cX.printValues()
+    #cX.printValues()
     assert(cX.coefficients[0].value == 1)
     assert(cX.coefficients[1].value == 1)
     assert(cX.coefficients[2].value == 0)

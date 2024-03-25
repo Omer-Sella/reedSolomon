@@ -52,10 +52,34 @@ def test_plus():
     assert(np.all(p2.plus(p0).coefficients[2].value == 1))
     return 'OK'
 
-def timesScalar():
+def test_timesScalar():
     p0 = polynomial(np.random.randint(0,2,100))
     scalar1 = binaryFieldElement(0)
     scalar2 = binaryFieldElement(1)
     assert (np.all(p0.timesScalar(scalar1).coefficients == p0.coefficients))
     assert (np.all(p0.timesScalar(scalar2).coefficients == (0 * p0.coefficients)))
+    return 'OK'
+
+def test_mul():
+    a = polynomial([1,0,0,0,1,0,1])
+    b = polynomial([1,0,1,0,1,1,0,0,1,1])
+    c = a * b
+    assert(c.order() == 16)
+    assert(c.coefficients[0].value == 1)
+    assert(c.coefficients[1].value == 1)
+    assert(c.coefficients[2].value == 0)
+    assert(c.coefficients[3].value == 1)
+    assert(c.coefficients[4].value == 0)
+    assert(c.coefficients[5].value == 1)
+    assert(c.coefficients[6].value == 0)
+    assert(c.coefficients[7].value == 1)
+    assert(c.coefficients[8].value == 0)
+    assert(c.coefficients[9].value == 1)
+    assert(c.coefficients[10].value == 1)
+    assert(c.coefficients[11].value == 1)
+    assert(c.coefficients[12].value == 0)
+    assert(c.coefficients[13].value == 0)
+    assert(c.coefficients[14].value == 1)
+    assert(c.coefficients[15].value == 0)
+    assert(c.coefficients[16].value == 1)
     return 'OK'

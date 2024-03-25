@@ -9,6 +9,7 @@ import copy
 """
 This file contains some ad-hoc arithmetic over the binary field.
 """
+IEEE_BINARY_DTYPE = np.int32
 
 class binaryFieldElement:
     def __init__(self, value):
@@ -99,22 +100,26 @@ class polynomial():
     def lift(self, liftBy):
         for i in range(liftBy):
             self.coefficients.append(binaryFieldElement(0))
-        return self
+        return
     
     def timesScalar(self, gfScalar):
-        newCoefficients = copy.deepcopy(self.coefficients)
+        newCoefficients = []#copy.deepcopy(self.coefficients)
         for j in range(len(self.coefficients)):
-            newCoefficients[j] = newCoefficients[j].times(gfScalar)
+            newCoefficients.append(self.coefficients[j].times(gfScalar))
         return polynomial(newCoefficients)
     
     def times(self, other):
-        newCoefficients = []
-        for i in range(len(other.coefficients) , 0 ,-1):
+        i = 0
+        length = len(other.coefficients)
+        result = polynomial([0])
+        while i < length: 
             fieldElement = other.coefficients[i]
             temp = polynomial(self.coefficients)
-            temp.lift(len(other.coefficients) - i)
-            temp.timesScalar(fieldElement)        
-        return polynomial(coefficients = newCoefficients)  
+            temp.lift(length - 1 - i)
+            temp.timesScalar(fieldElement)    
+            result = result.plus(temp)
+            i = i + 1
+        return result
 
     def ignoreFromDegree(self, degreeToTruncateFrom):
         newCoefficients = self.coefficients[0 : (degreeToTruncateFrom + 1)]
@@ -143,7 +148,7 @@ class polynomial():
         isEqual = True
         if pSelf.order() == pOther.order():
             for i in range(len(pSelf.coefficients)):
-                if pSelf.coefficients[i] != pOther.coefficients[i]:
+                if pSelf.coefficients[i].value != pOther.coefficients[i].value:
                     isEqual = False
         else:
             isEqual = False
@@ -162,3 +167,15 @@ class polynomial():
     def printValues(self):
         for element in self.coefficients:
             print(element.value)
+            
+class gf128(polynomial):
+    def __init__(self, value):
+        if value == 0 or value == 1:
+            coefficients = np.zeros(7, IEEE_BINARY_DTYPE)
+            coefficients[-1] = value
+            super().__init__(coefficients = coefficients)
+        elif len(value) == 7:
+            super().__init__(coefficients = value)
+        else:
+            raise("An element in GF(128) is a 7-tuple of binary values")
+    
