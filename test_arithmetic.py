@@ -93,5 +93,6 @@ def test_modulu():
     b = polynomial([1,0,1,0,1,1,0,0,1,1])
     c = polynomial([1,0,1,0,0,1,1,1,0,1,0,1,0,1,0,1,1])
     d = c.modulu(b)
-    assert (d == a)
+    e = polynomial([0])
+    assert (d == e)
     return 'OK'

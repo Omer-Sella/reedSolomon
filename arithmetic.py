@@ -145,20 +145,15 @@ class polynomial():
         remainder = polynomial(copy.deepcopy(self.coefficients))
         divisor.truncate()
         while remainder.order() >= divisor.order():
-            print(remainder.order())
             remainder.truncate()
-            print(remainder.coefficients[0].isZero())
             if not remainder.coefficients[0].isZero():
                 #kill ther leading coefficient
-                print(remainder.coefficients[0].value)
                 fieldElementInverse = remainder.coefficients[0].inverse()
-                print(fieldElementInverse.value)
                 temp = polynomial(copy.deepcopy(divisor.coefficients))
-                print(temp.order())
                 temp.lift(remainder.order() - divisor.order())
-                print(temp.order())
                 temp.timesScalar(fieldElementInverse)
                 remainder = remainder + temp
+        remainder.truncate()
         return remainder
         
                 
@@ -190,8 +185,6 @@ class polynomial():
             print(element.value)
             
 class gf128(polynomial):
-    generatorPolynomial = polynomial([1,0,0,0,1,0,0,1])
-    
     def __init__(self, value):
         if value == 0 or value == 1:
             coefficients = np.zeros(7, IEEE_BINARY_DTYPE)
@@ -200,12 +193,10 @@ class gf128(polynomial):
         elif len(value) == 7:
             super().__init__(coefficients = value)
         else:
-            raise("An element in GF(128) is a 7-tuple of binary values")
+            raise("An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients.")
     
-    def times(self, other):
+    def mul(self, other):
         result = self.times(other)
-        result = result.modulu(generatorPolynomial)
+        result = result.modulu(polynomial([1,0,0,0,1,0,0,1]))
+        return result
         
-        
-    def __mul__(self, other):
-        return self.times(other)
