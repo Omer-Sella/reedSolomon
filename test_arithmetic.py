@@ -61,25 +61,37 @@ def test_timesScalar():
     return 'OK'
 
 def test_mul():
-    a = polynomial([1,0,0,0,1,0,1])
+    #x^7 + x^3 + 1
+    a = polynomial([1,0,0,0,1,0,0,1])
+    #x^9 + x^7 + x^5 + x^4 + x + 1
     b = polynomial([1,0,1,0,1,1,0,0,1,1])
     c = a * b
     assert(c.order() == 16)
-    assert(c.coefficients[0].value == 1)
-    assert(c.coefficients[1].value == 1)
-    assert(c.coefficients[2].value == 0)
-    assert(c.coefficients[3].value == 1)
-    assert(c.coefficients[4].value == 0)
-    assert(c.coefficients[5].value == 1)
-    assert(c.coefficients[6].value == 0)
-    assert(c.coefficients[7].value == 1)
-    assert(c.coefficients[8].value == 0)
-    assert(c.coefficients[9].value == 1)
-    assert(c.coefficients[10].value == 1)
-    assert(c.coefficients[11].value == 1)
-    assert(c.coefficients[12].value == 0)
-    assert(c.coefficients[13].value == 0)
-    assert(c.coefficients[14].value == 1)
-    assert(c.coefficients[15].value == 0)
-    assert(c.coefficients[16].value == 1)
+    assert(c.coefficients[16-0].value == 1)
+    assert(c.coefficients[16-1].value == 1)
+    assert(c.coefficients[16-2].value == 0)
+    assert(c.coefficients[16-3].value == 1)
+    assert(c.coefficients[16-4].value == 0)
+    assert(c.coefficients[16-5].value == 1)
+    assert(c.coefficients[16-6].value == 0)
+    assert(c.coefficients[16-7].value == 1)
+    assert(c.coefficients[16-8].value == 0)
+    assert(c.coefficients[16-9].value == 1)
+    assert(c.coefficients[16-10].value == 1)
+    assert(c.coefficients[16-11].value == 1)
+    assert(c.coefficients[16-12].value == 0)
+    assert(c.coefficients[16-13].value == 0)
+    assert(c.coefficients[16-14].value == 1)
+    assert(c.coefficients[16-15].value == 0)
+    assert(c.coefficients[16-16].value == 1)
+    return 'OK'
+
+def test_modulu():
+    #x^7 + x^3 + 1
+    a = polynomial([1,0,0,0,1,0,0,1])
+    #x^9 + x^7 + x^5 + x^4 + x + 1
+    b = polynomial([1,0,1,0,1,1,0,0,1,1])
+    c = polynomial([1,0,1,0,0,1,1,1,0,1,0,1,0,1,0,1,1])
+    d = c.modulu(b)
+    assert (d == a)
     return 'OK'

@@ -98,6 +98,7 @@ class polynomial():
     
 
     def lift(self, liftBy):
+        assert(liftBy >=0 )
         for i in range(liftBy):
             self.coefficients.append(binaryFieldElement(0))
         return
@@ -116,7 +117,7 @@ class polynomial():
             fieldElement = other.coefficients[i]
             temp = polynomial(self.coefficients)
             temp.lift(length - 1 - i)
-            temp.timesScalar(fieldElement)    
+            temp = temp.timesScalar(fieldElement)    
             result = result.plus(temp)
             i = i + 1
         return result
@@ -139,6 +140,26 @@ class polynomial():
         newCoefficients.pop()
         return polynomial(newCoefficients)
             
+    def modulu(self, modulus):
+        divisor = polynomial(copy.deepcopy(modulus.coefficients))
+        remainder = polynomial(copy.deepcopy(self.coefficients))
+        divisor.truncate()
+        while remainder.order() >= divisor.order():
+            print(remainder.order())
+            remainder.truncate()
+            print(remainder.coefficients[0].isZero())
+            if not remainder.coefficients[0].isZero():
+                #kill ther leading coefficient
+                print(remainder.coefficients[0].value)
+                fieldElementInverse = remainder.coefficients[0].inverse()
+                print(fieldElementInverse.value)
+                temp = polynomial(copy.deepcopy(divisor.coefficients))
+                print(temp.order())
+                temp.lift(remainder.order() - divisor.order())
+                print(temp.order())
+                temp.timesScalar(fieldElementInverse)
+                remainder = remainder + temp
+        return remainder
         
                 
     def __eq__(self, other):
@@ -169,6 +190,8 @@ class polynomial():
             print(element.value)
             
 class gf128(polynomial):
+    generatorPolynomial = polynomial([1,0,0,0,1,0,0,1])
+    
     def __init__(self, value):
         if value == 0 or value == 1:
             coefficients = np.zeros(7, IEEE_BINARY_DTYPE)
@@ -179,3 +202,10 @@ class gf128(polynomial):
         else:
             raise("An element in GF(128) is a 7-tuple of binary values")
     
+    def times(self, other):
+        result = self.times(other)
+        result = result.modulu(generatorPolynomial)
+        
+        
+    def __mul__(self, other):
+        return self.times(other)
