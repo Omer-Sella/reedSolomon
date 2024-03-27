@@ -48,17 +48,30 @@ class polynomial():
     #Meaning coefficients[0] is the highest power
     def __init__(self, coefficients = None):
         newCoefficients = []
-        if coefficients is not None:
-            if type(coefficients[0]) == type(binaryFieldElement(value = 0)):
-                for i in range(len(coefficients)):
-                    newCoefficients.append(copy.deepcopy(coefficients[i]))
-            elif np.isscalar(coefficients[0]):
-                for i in range(len(coefficients)):
-                    newCoefficients.append(binaryFieldElement(coefficients[i]))
-            else:
-                raise('Çoefficients must be finite field elements or scalalrs')    
+        if np.isscalar(coefficients[0]):
+            for i in range(len(coefficients)):
+                newCoefficients.append(binaryFieldElement(coefficients[i]))
+        else:
+            newCoefficients = copy.deepcopy(coefficients)
         self.coefficients = newCoefficients
-    
+        # if coefficients is not None:
+        #     if type(coefficients[0]) == type(binaryFieldElement(value = 0)):
+        #         for i in range(len(coefficients)):
+        #             newCoefficients.append(copy.deepcopy(coefficients[i]))
+        #     elif np.isscalar(coefficients[0]):
+        #         for i in range(len(coefficients)):
+        #             newCoefficients.append(binaryFieldElement(coefficients[i]))
+        #     else:
+        #         raise('Çoefficients must be finite field elements or scalalrs')    
+        # self.coefficients = newCoefficients
+
+    def isZero(self):
+        zro = True
+        for coefficient in self.coefficients:
+            if not coefficient.isZero():
+                zro = False
+        return zro
+        
     def order(self):
         #find first non zero:
         length = len(self.coefficients)
@@ -67,7 +80,17 @@ class polynomial():
         while (i < length) and self.coefficients[i].isZero():
             i = i + 1
             order = order - 1
-        return order 
+        return order
+    
+    def getLeadingCoefficientIndex(self):
+        i = 0
+        length = len(self.coefficients)
+        while ( i < length) and self.coefficients[i].isZero():
+            #print(self.coefficients[i].isZero())
+            #print(i)
+            i = i + 1
+        return i
+        
     
     def truncate(self):
         while ((self.coefficients[0].value == 0) and len(self.coefficients) > 1) : #(len(self.coefficients) - 1) > self.order():
@@ -139,23 +162,24 @@ class polynomial():
         #Now reduce the degree of every mono by 1
         newCoefficients.pop()
         return polynomial(newCoefficients)
-            
-    def modulu(self, modulus):
-        divisor = polynomial(copy.deepcopy(modulus.coefficients))
-        remainder = polynomial(copy.deepcopy(self.coefficients))
-        divisor.truncate()
-        while remainder.order() >= divisor.order():
-            remainder.truncate()
-            if not remainder.coefficients[0].isZero():
-                #kill ther leading coefficient
-                fieldElementInverse = remainder.coefficients[0].inverse()
-                temp = polynomial(copy.deepcopy(divisor.coefficients))
-                temp.lift(remainder.order() - divisor.order())
-                temp.timesScalar(fieldElementInverse)
-                remainder = remainder + temp
-        remainder.truncate()
-        return remainder
+    
         
+    def modulu(self, divisor):
+        assert (not divisor.isZero())
+        remainder = polynomial(copy.deepcopy(self.coefficients))
+        while remainder.order() >= divisor.order() and not remainder.isZero():
+            i = remainder.getLeadingCoefficientIndex()
+            #if not remainder.coefficients[0].isZero():
+            #kill ther leading coefficient
+            fieldElementInverse = remainder.coefficients[i].inverse()
+            temp = polynomial(copy.deepcopy(divisor.coefficients))
+            temp.lift(remainder.order() - divisor.order())
+            temp.timesScalar(fieldElementInverse)
+            remainder = remainder + temp
+        remainder = polynomial(remainder.coefficients[-len(divisor.coefficients) + 1 : ])
+        return remainder
+    
+    
                 
     def __eq__(self, other):
         # This is a super lazy implementation, since I actually deepcopy and test equality on the truncated polynomials
@@ -200,3 +224,17 @@ class gf128(polynomial):
         result = result.modulu(polynomial([1,0,0,0,1,0,0,1]))
         return result
         
+    def inverse(self):
+        return
+
+c={}
+a = gf128([0,0,0,0,0,1,0])
+b = gf128([0,0,0,0,0,1,0])
+c[1] = a
+for i in range(2,128,1):
+    b = b * a
+    b = b.modulu(polynomial([1,0,0,0,1,0,0,1]))
+    f = []
+    for e in b.coefficients:
+        f.append(e.value)
+    c[i] = f
