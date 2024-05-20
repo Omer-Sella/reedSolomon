@@ -86,8 +86,6 @@ class polynomial():
         i = 0
         length = len(self.coefficients)
         while ( i < length) and self.coefficients[i].isZero():
-            #print(self.coefficients[i].isZero())
-            #print(i)
             i = i + 1
         return i
         
@@ -199,7 +197,8 @@ class polynomial():
         return(self.plus(other))
     
     def __sub__(self, other):
-        return(self.minus(other))
+        # Addition and sbtraction modulu 2 are both bitwise xor
+        return(self.plus(other))
     
     def __mul__(self, other):
         return self.times(other)
@@ -227,14 +226,26 @@ class gf128(polynomial):
     def inverse(self):
         return
 
-c={}
-a = gf128([0,0,0,0,0,1,0])
-b = gf128([0,0,0,0,0,1,0])
-c[1] = a
-for i in range(2,128,1):
-    b = b * a
-    b = b.modulu(polynomial([1,0,0,0,1,0,0,1]))
+def generateExponentAndLogTables():
+    exponentTable={}
+    logarithmTable={}
+    a = gf128([0,0,0,0,0,1,0])
+    b = gf128([0,0,0,0,0,1,0])
     f = []
+    stringF = '' 
     for e in b.coefficients:
         f.append(e.value)
-    c[i] = f
+        stringF = stringF + str(e.value)
+    exponentTable[1] = f
+    logarithmTable[stringF] = 1
+    for i in range(2,128,1):
+        b = b * a
+        b = b.modulu(polynomial([1,0,0,0,1,0,0,1]))
+        f = []
+        stringF = '' 
+        for e in b.coefficients:
+            f.append(e.value)
+            stringF = stringF + str(e.value)
+        exponentTable[i] = f
+        logarithmTable[stringF] = i
+    return exponentTable, logarithmTable

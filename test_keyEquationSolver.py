@@ -28,3 +28,4 @@ def test_keyEquationSolver():
     assert(cX.coefficients[1].value == 1)
     assert(cX.coefficients[2].value == 0)
     assert(cX.coefficients[3].value == 1)
+    return 'OK'

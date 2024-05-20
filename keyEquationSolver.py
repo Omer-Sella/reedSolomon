@@ -33,12 +33,23 @@ def keyEquationSolver(polynomialClass, galoisElement, syndromes):
          else:
              if (2 * L) >= K: #Note the fix k replaced with K
                  #print("****************")    
-                 cX = cX - (pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse())))).lift(l)
+                 hX = pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse())))
+                 hX.lift(l)
+                 cX = cX - hX
                  l = l + 1
              else:
                  
                  tX = cX
-                 cX = cX - (pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse())))).lift(l)
+                 
+                 hX = pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse())))
+                 hX.printValues()
+                 #print("hX is: ")
+                 hX.lift(l)
+                 #print(hX.order())
+                 #print("cX is: ")
+                 #print(cX.order())
+                 #print("Before subtration:")
+                 cX = cX - hX
                  L = K - L
                  pX = tX
                  oldDiscrepancy = discrepancy
