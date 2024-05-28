@@ -20,8 +20,11 @@ def bchDecoder(receivedBinaryVecotor, exponentDictionary, numberOfPowers, codewo
     syndromes = []
     for i in range(numberOfPowers):
         print(exponentDictionary[i])
-        newSyndrome = receivedBinaryX.at(exponentDictionary[i])
-        syndromes.append(newSyndrome.coefficients)
+        helper = gf128(exponentDictionary[i])
+        newSyndrome = receivedBinaryX.at(helper)
+        #print(newSyndrome.__class__)
+        syndromes.append(newSyndrome.getValue())
+        #print(syndromes)
     # Calculate error locator polynomial
     errorLocatorX = keyEquationSolver(polynomialClass, galoisElement, syndromes)
     # Chien search 

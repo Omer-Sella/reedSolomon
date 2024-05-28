@@ -40,6 +40,9 @@ class binaryFieldElement:
     
     def __sub__(self, other):
         return self.minus(other)
+    
+    def getValue(self):
+        return self.value
 
 class polynomial():
     # From draft dj_d0p1:
@@ -183,9 +186,11 @@ class polynomial():
         # Initialize the helper gfElement to be the 1 of galois field  of the same class as evaluationPoint 
         gfElement = evaluationPoint.__class__(1)
         for i in range(len(self.coefficients)):
-            print(i)
-            print(gfElement.__class__)
-            result = result + ( gfElement.binaryMul(self.coefficients[i]) )
+            temp = self.coefficients[i].getValue()
+            print(temp)
+            helper = gfElement.mul(evaluationPoint.__class__(temp))
+            print(helper.__class__)
+            result = result + ( helper )
             gfElement = gfElement.mul(evaluationPoint)
         return result
     
@@ -221,18 +226,24 @@ class polynomial():
             
 class gf128(polynomial):
     def __init__(self, value):
-        if value == 0 or value == 1:
+        if hasattr(value, '__len__'):
+            if len(value) == 7:
+                super().__init__(coefficients = value)
+            else:
+                print("Class of provided value is " + str(value.__class__))
+                raise("An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients. ")
+        elif value == 0 or value == 1:
             coefficients = np.zeros(7, IEEE_BINARY_DTYPE)
             coefficients[-1] = value
             super().__init__(coefficients = coefficients)
-        elif len(value) == 7:
-            super().__init__(coefficients = value)
         else:
+            print("Class of provided value is " + str(value.__class__))
             raise("An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients.")
     
     def mul(self, other):
         tempResult = self.times(other)
         tempResult = tempResult.modulu(polynomial([1,0,0,0,1,0,0,1]))
+        print(tempResult.coefficients)
         result = gf128(value = tempResult.coefficients)
         return result
         
@@ -244,6 +255,9 @@ class gf128(polynomial):
             return gf128(value = 0)
         else:
             return gf128(value = self.coefficients)
+    
+    def getValue(self):
+        return self.coefficients
 
 def generateExponentAndLogTables():
     exponentTable={}
@@ -255,7 +269,7 @@ def generateExponentAndLogTables():
     for e in b.coefficients:
         f.append(e.value)
         stringF = stringF + str(e.value)
-    exponentTable[0] = gf128([0,0,0,0,0,0,1])
+    exponentTable[0] = [0,0,0,0,0,0,1]
     exponentTable[1] = f
     logarithmTable[stringF] = 1
     for i in range(2,127,1):
