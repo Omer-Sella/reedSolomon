@@ -177,6 +177,18 @@ class polynomial():
         remainder = polynomial(remainder.coefficients[-len(divisor.coefficients) + 1 : ])
         return remainder
     
+    def at(self, evaluationPoint):
+        # Initialize result as the zero of galois field  of the same class as evaluationPoint 
+        result = evaluationPoint.__class__(0)
+        # Initialize the helper gfElement to be the 1 of galois field  of the same class as evaluationPoint 
+        gfElement = evaluationPoint.__class__(1)
+        for i in range(len(self.coefficients)):
+            print(i)
+            print(gfElement.__class__)
+            result = result + ( gfElement.binaryMul(self.coefficients[i]) )
+            gfElement = gfElement.mul(evaluationPoint)
+        return result
+    
     
                 
     def __eq__(self, other):
@@ -219,12 +231,19 @@ class gf128(polynomial):
             raise("An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients.")
     
     def mul(self, other):
-        result = self.times(other)
-        result = result.modulu(polynomial([1,0,0,0,1,0,0,1]))
+        tempResult = self.times(other)
+        tempResult = tempResult.modulu(polynomial([1,0,0,0,1,0,0,1]))
+        result = gf128(value = tempResult.coefficients)
         return result
         
     def inverse(self):
         return
+    
+    def binaryMul(self, other):
+        if other.value == 0:
+            return gf128(value = 0)
+        else:
+            return gf128(value = self.coefficients)
 
 def generateExponentAndLogTables():
     exponentTable={}
@@ -236,9 +255,10 @@ def generateExponentAndLogTables():
     for e in b.coefficients:
         f.append(e.value)
         stringF = stringF + str(e.value)
+    exponentTable[0] = gf128([0,0,0,0,0,0,1])
     exponentTable[1] = f
     logarithmTable[stringF] = 1
-    for i in range(2,128,1):
+    for i in range(2,127,1):
         b = b * a
         b = b.modulu(polynomial([1,0,0,0,1,0,0,1]))
         f = []
@@ -249,3 +269,5 @@ def generateExponentAndLogTables():
         exponentTable[i] = f
         logarithmTable[stringF] = i
     return exponentTable, logarithmTable
+
+

@@ -96,3 +96,10 @@ def test_modulu():
     e = polynomial([0])
     assert (d == e)
     return 'OK'
+
+def test_typeConsistencyGalois128():
+    a = gf128(1)
+    b = gf128(0)
+    c = a.mul(b)
+    assert c.__class__ == a.__class__
+    return 'OK'
