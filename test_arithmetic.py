@@ -103,3 +103,24 @@ def test_typeConsistencyGalois128():
     c = a.mul(b)
     assert c.__class__ == a.__class__
     return 'OK'
+
+def test_plus_bug1():
+    #0*X^16 0*X^15 0*X^14 0*X^13 1*X^12 0*X^11 1*X^10 1*X^9 1*X^8 0*X^7 0*X^6 1*X^5 0*X^4 1*X^3 0*X^2 1*X^1 1*X^0
+    a = polynomial(coefficients = [0, 0, 0, 0, 1, 0, 1, 1, 1 ,0, 0 ,1, 0, 1, 0, 1, 1])
+    #1*X^12 0*X^11 1*X^10 0*X^9 1*X^8 1*X^7 0*X^6 0*X^5 1*X^4 1*X^3 0*X^2 0*X^1 0*X^0
+    b = polynomial(coefficients = [1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0])
+    c = a + b
+    #The bug was: c = 0*X^16 1*X^15 1*X^14 1*X^13 1*X^12 1*X^11 0*X^10 1*X^9 0*X^8 0*X^7 0*X^6 1*X^5 1*X^4 1*X^3 0*X^2 1*X^1 1*X^0
+    testResult = polynomial([1,0,1,0,1,1,0,0,1,1])
+    assert c == testResult
+    return 'OK'
+
+def test_plus_bug2():
+    #0*X^0
+    a = polynomial(coefficients=[0])
+    #0*X^12 0*X^11 0*X^10 0*X^9 0*X^8 0*X^7 0*X^6 0*X^5 0*X^4 0*X^3 0*X^2 0*X^1 0*X^0
+    b = polynomial(coefficients=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    c = a + b
+    testResult = polynomial([0])
+    assert c == testResult
+    return 'OK'

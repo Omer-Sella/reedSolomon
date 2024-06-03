@@ -98,24 +98,46 @@ class polynomial():
             self.coefficients.pop(0)
         return self
             
-    def plus(self, other):
+    def old_plus(self, other):
+        self.printValues()
+        other.printValues()
         if other.order() > self.order():
             small = self
             big = other
-            bigOrder = other.order()
-            smallOrder = self.order()
-            
         else:
             small = other
             big = self
-            bigOrder = self.order()
-            smallOrder = other.order()
+        bigOrder = self.order()
+        smallOrder = other.order()
         newCoefficients = copy.deepcopy(big.coefficients)
-        for i in range(smallOrder + 1):
-            a = newCoefficients[len(newCoefficients) - 1 - i]
-            b = small.coefficients[len(small.coefficients)- 1 - i]
-            newCoefficients[bigOrder - i] = a.plus(b)
+        
+        print(len(small.coefficients))
+        for i in range(len(small.coefficients)):
+            print(-i-1)
+            a = newCoefficients[ - i -1]
+            b = small.coefficients[- i -1]
+            newCoefficients[- i -1] = a.plus(b)
         return polynomial(coefficients = newCoefficients)
+    
+    def plus(self, other):
+        if len(other.coefficients) > len(self.coefficients):
+            newCoefficients = copy.deepcopy(other.coefficients)
+            diff = len(other.coefficients) - len(self.coefficients)
+            for i in range(len(self.coefficients)):
+                newCoefficients[diff + i] = (newCoefficients[diff + i] + self.coefficients[i])
+        elif len(other.coefficients) < len(self.coefficients):
+            newCoefficients = copy.deepcopy(self.coefficients)
+            diff = len(self.coefficients) - len(other.coefficients)
+            for i in range(len(other.coefficients)):
+                newCoefficients[diff + i] = (newCoefficients[diff + i] + other.coefficients[i])
+        else:
+            newCoefficients = copy.deepcopy(self.coefficients)
+            diff = 0
+            for i in range(len(other.coefficients)):
+                newCoefficients[diff + i] = (newCoefficients[diff + i] + other.coefficients[i])
+            
+        return polynomial(coefficients = newCoefficients)
+    
     
     def minus(self, other):
         return self.plus(other)
@@ -166,31 +188,48 @@ class polynomial():
     
         
     def modulu(self, divisor):
+        # Safety - no division by zero
         assert (not divisor.isZero())
         remainder = polynomial(copy.deepcopy(self.coefficients))
-        while remainder.order() >= divisor.order() and not remainder.isZero():
+        divisorOrder = divisor.order()
+        if divisorOrder == 0:
+            remainder = polynomial( coefficients = [0])
+        while remainder.order() >= divisorOrder and not remainder.isZero():
+            #print("inside remainder calc loop. Order is: ")
+            #print(remainder.order())
             i = remainder.getLeadingCoefficientIndex()
+            #print("Leading coefficient index is:")
+            #print(i)
+            #print("Leading coefficient is:")
+            #print(remainder.coefficients[i].value)
             #if not remainder.coefficients[0].isZero():
             #kill ther leading coefficient
             fieldElementInverse = remainder.coefficients[i].inverse()
             temp = polynomial(copy.deepcopy(divisor.coefficients))
+            #print("lift value is "+str(remainder.order() - divisor.order()))
             temp.lift(remainder.order() - divisor.order())
+            #print("After lift, temp is:")
+            #temp.printValues()
             temp.timesScalar(fieldElementInverse)
             remainder = remainder + temp
+            #print("And the new remainder is:")
+            #remainder.printValues()
         remainder = polynomial(remainder.coefficients[-len(divisor.coefficients) + 1 : ])
         return remainder
     
     def at(self, evaluationPoint):
+        # No safety ! The multiplication between the evaluation point and the coefficients needs to make sense.
         # Initialize result as the zero of galois field  of the same class as evaluationPoint 
         result = evaluationPoint.__class__(0)
         # Initialize the helper gfElement to be the 1 of galois field  of the same class as evaluationPoint 
         gfElement = evaluationPoint.__class__(1)
         for i in range(len(self.coefficients)):
             temp = self.coefficients[i].getValue()
-            print(temp)
-            helper = gfElement.mul(evaluationPoint.__class__(temp))
-            print(helper.__class__)
-            result = result + ( helper )
+            #print("input to multiplication is "+ str(temp))
+            #helper = gfElement.mul(evaluationPoint.__class__(temp))
+            helper = gfElement.mul(temp)
+            #print("output from multiplication is "+ str(helper.__class__))
+            result = result + helper
             gfElement = gfElement.mul(evaluationPoint)
         return result
     
@@ -221,8 +260,10 @@ class polynomial():
         return self.times(other)
     
     def printValues(self):
-        for element in self.coefficients:
-            print(element.value)
+        string = ""
+        for power in range(len(self.coefficients)):
+            string += (" " + str(self.coefficients[power].value) + "*X^" + str(len(self.coefficients) - power - 1))
+        print(string)
             
 class gf128(polynomial):
     def __init__(self, value):
@@ -241,9 +282,11 @@ class gf128(polynomial):
             raise("An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients.")
     
     def mul(self, other):
+        #print("Inside mul")
+        #print(other.__class__)
         tempResult = self.times(other)
         tempResult = tempResult.modulu(polynomial([1,0,0,0,1,0,0,1]))
-        print(tempResult.coefficients)
+        #print(tempResult.coefficients)
         result = gf128(value = tempResult.coefficients)
         return result
         

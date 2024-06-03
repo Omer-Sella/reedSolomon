@@ -16,14 +16,16 @@ import numpy as np
 def bchDecoder(receivedBinaryVecotor, exponentDictionary, numberOfPowers, codewordLengthActual, codewordLengthMaximal):
     correctionVector = np.zeros(codewordLengthActual, dtype = np.int32)
     receivedBinaryX = polynomialClass(coefficients = list(receivedBinaryVecotor))
+    
     # Calculate syndromes
     syndromes = []
     for i in range(numberOfPowers):
-        print(exponentDictionary[i])
+        #print("exponent dictionary at location" + str(i) + " is "+ str(exponentDictionary[i]))
         helper = gf128(exponentDictionary[i])
         newSyndrome = receivedBinaryX.at(helper)
-        #print(newSyndrome.__class__)
-        syndromes.append(newSyndrome.getValue())
+        print("Syndrome class is")
+        print(newSyndrome.__class__)
+        syndromes.append(newSyndrome)
         #print(syndromes)
     # Calculate error locator polynomial
     errorLocatorX = keyEquationSolver(polynomialClass, galoisElement, syndromes)
