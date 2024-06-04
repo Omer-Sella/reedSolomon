@@ -165,7 +165,7 @@ class polynomial():
         #newCoefficients[0 : len(self.coefficients)] = self.coefficients
             newCoefficients = np.array(newCoefficients)    
             self.coefficients = newCoefficients
-        return
+        return self
     
     def timesScalar(self, gfScalar):
         newCoefficients = copy.deepcopy(self.coefficients)
@@ -293,8 +293,12 @@ class polynomial():
     
     def printValues(self):
         string = ""
-        for power in range(len(self.coefficients)):
-            string += (" " + str(self.coefficients[power].value) + "*X^" + str(len(self.coefficients) - power - 1))
+        if np.isscalar(self.coefficients[0]):
+            for power in range(len(self.coefficients)):
+                string += (" " + str(self.coefficients[power]) + "*X^" + str(len(self.coefficients) - power - 1))
+        else:
+            for power in range(len(self.coefficients)):
+                string += (" " + str(self.coefficients[power].value) + "*X^" + str(len(self.coefficients) - power - 1))
         print(string)
             
 class gf128(polynomial):
