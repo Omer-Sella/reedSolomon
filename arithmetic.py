@@ -41,6 +41,18 @@ class binaryFieldElement:
     def __sub__(self, other):
         return self.minus(other)
     
+    def __mul__(self, other):
+        return self.times(other)
+    
+    def __eq__(self, other):
+        result = False
+        if other.__class__ == self.__class__:
+            result = (other.getValue() == self.getValue())
+        elif other == 0 or other == 1:
+            result = (self.getValue() == other)
+        return result
+            
+    
     def getValue(self):
         return self.value
 
@@ -50,12 +62,13 @@ class polynomial():
     #defined by c (where the bit 0 of c represents the coefficient of power 125).
     #Meaning coefficients[0] is the highest power
     def __init__(self, coefficients = None):
-        newCoefficients = []
-        if np.isscalar(coefficients[0]):
-            for i in range(len(coefficients)):
-                newCoefficients.append(binaryFieldElement(coefficients[i]))
-        else:
-            newCoefficients = copy.deepcopy(coefficients)
+        #newCoefficients = []
+        #if np.isscalar(coefficients[0]):
+        #    for i in range(len(coefficients)):
+        #        newCoefficients.append(binaryFieldElement(coefficients[i]))
+        #else:
+        #    newCoefficients = copy.deepcopy(coefficients)
+        newCoefficients = np.array(coefficients)
         self.coefficients = newCoefficients
         # if coefficients is not None:
         #     if type(coefficients[0]) == type(binaryFieldElement(value = 0)):
@@ -71,7 +84,7 @@ class polynomial():
     def isZero(self):
         zro = True
         for coefficient in self.coefficients:
-            if not coefficient.isZero():
+            if not coefficient == 0:
                 zro = False
         return zro
         
@@ -80,7 +93,7 @@ class polynomial():
         length = len(self.coefficients)
         order = length - 1
         i = 0
-        while (i < length) and self.coefficients[i].isZero():
+        while (i < length) and (self.coefficients[i] == 0):
             i = i + 1
             order = order - 1
         return order
@@ -88,14 +101,14 @@ class polynomial():
     def getLeadingCoefficientIndex(self):
         i = 0
         length = len(self.coefficients)
-        while ( i < length) and self.coefficients[i].isZero():
+        while ( i < length) and (self.coefficients[i] == 0):
             i = i + 1
         return i
         
     
     def truncate(self):
-        while ((self.coefficients[0].value == 0) and len(self.coefficients) > 1) : #(len(self.coefficients) - 1) > self.order():
-            self.coefficients.pop(0)
+        newCoefficients = self.coefficients[ self.getLeadingCoefficientIndex() : ]
+        self.coefficients = newCoefficients
         return self
             
     def old_plus(self, other):
@@ -110,10 +123,7 @@ class polynomial():
         bigOrder = self.order()
         smallOrder = other.order()
         newCoefficients = copy.deepcopy(big.coefficients)
-        
-        print(len(small.coefficients))
         for i in range(len(small.coefficients)):
-            print(-i-1)
             a = newCoefficients[ - i -1]
             b = small.coefficients[- i -1]
             newCoefficients[- i -1] = a.plus(b)
@@ -145,14 +155,19 @@ class polynomial():
 
     def lift(self, liftBy):
         assert(liftBy >=0 )
-        for i in range(liftBy):
-            self.coefficients.append(binaryFieldElement(0))
+        if liftBy > 0:
+            newCoefficients = list(self.coefficients)
+            for i in range(liftBy):
+                newCoefficients.append(self.coefficients[0].__class__(0)) 
+        #newCoefficients = np.zeros((liftBy + len(self.coefficients)), dtype = IEEE_BINARY_DTYPE)
+        #newCoefficients[0 : len(self.coefficients)] = self.coefficients
+        self.coefficients = newCoefficients
         return
     
     def timesScalar(self, gfScalar):
-        newCoefficients = []#copy.deepcopy(self.coefficients)
+        newCoefficients = copy.deepcopy(self.coefficients)
         for j in range(len(self.coefficients)):
-            newCoefficients.append(self.coefficients[j].times(gfScalar))
+            newCoefficients[j] = newCoefficients[j] * gfScalar
         return polynomial(newCoefficients)
     
     def times(self, other):
@@ -221,24 +236,37 @@ class polynomial():
         # No safety ! The multiplication between the evaluation point and the coefficients needs to make sense.
         # Initialize result as the zero of galois field  of the same class as evaluationPoint 
         result = evaluationPoint.__class__(0)
+        print("class of result when starting is: ")
+        print(result.__class__)
         # Initialize the helper gfElement to be the 1 of galois field  of the same class as evaluationPoint 
         gfElement = evaluationPoint.__class__(1)
+        print("class of gfElement is :")
+        print(gfElement.__class__)
         for i in range(len(self.coefficients)):
-            temp = self.coefficients[i].getValue()
+            temp = self.coefficients[i]
             #print("input to multiplication is "+ str(temp))
             #helper = gfElement.mul(evaluationPoint.__class__(temp))
-            helper = gfElement.mul(temp)
+            temp = (evaluationPoint.__class__(temp)).mul(gfElement)
+            #print("Class of temp after multiplication is :")
+            #print(temp.__class__)
+            #helper = gfElement.mul(temp)
             #print("output from multiplication is "+ str(helper.__class__))
-            result = result + helper
+            result = temp.plus(result) #.plus(temp)
+            print("Class of result in iteration " + str(i))
+            print(result.__class__)
             gfElement = gfElement.mul(evaluationPoint)
+        print("class of result going out is:")
+        print(result.__class__)
         return result
     
     
                 
     def __eq__(self, other):
         # This is a super lazy implementation, since I actually deepcopy and test equality on the truncated polynomials
-        pSelf = copy.deepcopy(self).truncate()
-        pOther = copy.deepcopy(other).truncate()
+        pSelf = copy.deepcopy(self)
+        pSelf = pSelf.truncate()
+        pOther = copy.deepcopy(other)
+        pOther = pOther.truncate()
         isEqual = True
         if pSelf.order() == pOther.order():
             for i in range(len(pSelf.coefficients)):
@@ -301,6 +329,10 @@ class gf128(polynomial):
     
     def getValue(self):
         return self.coefficients
+    
+    def plus(self, other):
+        coefficients = (self.coefficients + other.coefficients) %2
+        return gf128(coefficients)
 
 def generateExponentAndLogTables():
     exponentTable={}
@@ -310,8 +342,8 @@ def generateExponentAndLogTables():
     f = []
     stringF = '' 
     for e in b.coefficients:
-        f.append(e.value)
-        stringF = stringF + str(e.value)
+        f.append(e)
+        stringF = stringF + str(e)
     exponentTable[0] = [0,0,0,0,0,0,1]
     exponentTable[1] = f
     logarithmTable[stringF] = 1
@@ -321,8 +353,8 @@ def generateExponentAndLogTables():
         f = []
         stringF = '' 
         for e in b.coefficients:
-            f.append(e.value)
-            stringF = stringF + str(e.value)
+            f.append(e)
+            stringF = stringF + str(e)
         exponentTable[i] = f
         logarithmTable[stringF] = i
     return exponentTable, logarithmTable

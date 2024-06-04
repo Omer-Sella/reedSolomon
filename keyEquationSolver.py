@@ -4,51 +4,42 @@ Created on Tue Feb 27 10:03:01 2024
 
 @author: Omer
 """
-from arithmetic import binaryFieldElement as galoisElement
-from arithmetic import polynomial as polynomialClass
+#from arithmetic import binaryFieldElement as galoisElement
+#from arithmetic import polynomial as polynomialClass
 
-def keyEquationSolver(polynomialClass, galoisElement, syndromes):
+def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
      # Key Equation Solver over an extension binary field
      # See Todd K. Moon page 258
+     # Syndromes need to be passed as a list of syndromes of class galoisElementClass
+     assert (syndromes[0].__class__ == galoisElementClass)
+     
      L = 0 #Current Length of the LFSR
-     cX = polynomialClass(coefficients = [1]) #Connection polynomial
-     pX = polynomialClass(coefficients = [1]) #The connection polynomial before last change
+     #cX = polynomialClass(coefficients = [1]) #Connection polynomial
+     #pX = polynomialClass(coefficients = [1]) #The connection polynomial before last change
+     cX = polynomialClass(coefficients = [galoisElementClass(1)]) #Connection polynomial
+     pX = polynomialClass(coefficients = [galoisElementClass(1)]) #The connection polynomial before last change
+     hX = polynomialClass(coefficients = [galoisElementClass(0)])
      l = 1
-     oldDiscrepancy = galoisElement(value = 1) #was 1  but I think might be wrong
+     oldDiscrepancy = galoisElementClass(value = 1) #was 1  but I think might be wrong
      for k in range(len(syndromes)):
          K = k + 1
-         discrepancy = galoisElement(value = syndromes[k])
-         #print("Disc value == ")
-         #print(discrepancy.value)
+         discrepancy = syndromes[k]
          for i in range(L):
-             #print("k is:" + str(k))
-             #print("i is : "+ str(i))
-             diff =  cX.coefficients[(i+1)].times((galoisElement(syndromes[k-(i+1)])))
+             diff =  cX.coefficients[(i+1)].times((syndromes[k-(i+1)]))
              discrepancy = discrepancy + diff
-             #print("Diff value == ")
-             #print(diff.value)
          # ???discrepancy = syndromes + discrepancy
-         if discrepancy.isZero():
+         if discrepancy == 0:
              l = l + 1
          else:
              if (2 * L) >= K: #Note the fix k replaced with K
-                 #print("****************")    
-                 hX = pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse())))
+                 hX = pX.timesScalar(discrepancy.times(oldDiscrepancy.inverse()))
                  hX.lift(l)
                  cX = cX - hX
                  l = l + 1
              else:
-                 
                  tX = cX
-                 
-                 hX = pX.timesScalar((discrepancy.times(oldDiscrepancy.inverse())))
-                 hX.printValues()
-                 #print("hX is: ")
+                 hX = pX.timesScalar(discrepancy.times(oldDiscrepancy.inverse()))
                  hX.lift(l)
-                 #print(hX.order())
-                 #print("cX is: ")
-                 #print(cX.order())
-                 #print("Before subtration:")
                  cX = cX - hX
                  L = K - L
                  pX = tX
@@ -56,12 +47,6 @@ def keyEquationSolver(polynomialClass, galoisElement, syndromes):
                  l = 1
          #print("| K | syndromes[k] | disc | l  | L   | old discrepancy |")
          #print("| %d | %d            | %d    | %d  | %d   | %d              |" % (K, syndromes[k], discrepancy.value, l, L,  oldDiscrepancy.value))
-         
-         #print("c(x) == ")
-         #cX.printValues()
-         #print("p(x) == ")
-         #pX.printValues()
-         
         
      return cX
  

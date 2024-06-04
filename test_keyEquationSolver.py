@@ -5,6 +5,8 @@ Created on Fri Mar 22 11:41:12 2024
 @author: Omer
 """
 from keyEquationSolver import *
+from arithmetic import binaryFieldElement as galoisElement
+from arithmetic import polynomial as polynomialClass
 
 def test_keyEquationSolver():
     #Testing the Todd K. Moon version using example on page 281 (laboratory 6 ex. 2)
@@ -22,7 +24,10 @@ def test_keyEquationSolver():
     #r = np.array([0,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0]) #This is equivalent to r(x) = x + x^3 + x^8
     syndromes = np.array([ 1, 1, 1 , 0, 1 , 0, 0])
     #syndromes = np.array([ 0,0,1,0,1,1,1])
-    cX = keyEquationSolver(polynomialClass, galoisElement, syndromes)
+    syndromesAsGFElements = []
+    for s in syndromes:
+        syndromesAsGFElements.append(galoisElement(s))
+    cX = keyEquationSolver(polynomialClass, galoisElement, syndromesAsGFElements)
     #cX.printValues()
     assert(cX.coefficients[0].value == 1)
     assert(cX.coefficients[1].value == 1)
