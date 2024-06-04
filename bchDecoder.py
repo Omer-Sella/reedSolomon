@@ -17,29 +17,32 @@ import time
 
 def bchDecoder(receivedBinaryVecotor, exponentDictionary, numberOfPowers, codewordLengthActual, codewordLengthMaximal):
     correctionVector = np.zeros(codewordLengthActual, dtype = np.int32)
-    receivedBinaryX = polynomialClass(coefficients = list(receivedBinaryVecotor))
-    
+    receivedBinaryX = polynomialClass(coefficients = list(map(gf128, receivedBinaryVecotor)))
     # Calculate syndromes
     syndromes = []
     for i in range(numberOfPowers):
         #print("exponent dictionary at location" + str(i) + " is "+ str(exponentDictionary[i]))
         helper = gf128(exponentDictionary[i])
-        print("The class of the eval point is:")
-        print(helper.__class__)
-        start =        time.time()
-        
+        #print("The class of the eval point is:")
+        #print(helper.__class__)
+        start =        time.time()        
         newSyndrome = receivedBinaryX.at(helper)
         end = time.time()
-        print("Time it took to evaluate at point is: " + str(end-start))
-        print("Syndrome class is")
-        print(newSyndrome.__class__)
+        #print("Time it took to evaluate at point is: " + str(end-start))
+        #print("Syndrome class is")
+        #print(newSyndrome.__class__)
         syndromes.append(newSyndrome)
         #print(syndromes)
     # Calculate error locator polynomial
     errorLocatorX = keyEquationSolver(polynomialClass, gf128, syndromes)
+    #print("*****")
+    #errorLocatorX.printValues()
     # Chien search 
     for i in range(codewordLengthActual):
-        if (errorLocatorX.at(exponentDictionary[i])).isZro():
+        #print(i)
+        #print(exponentDictionary[i])
+        #print(errorLocatorX.at(exponentDictionary[i]))
+        if (errorLocatorX.at(gf128(exponentDictionary[i]))) == 0: #Note: if we always use gf128, then cast the entire dictionary in advance
             correctionVector[codewordLengthMaximal - i] = 1
     correctedVector = receivedBinaryVecotor + correctionVector
     return correctedVector, correctionVector

@@ -69,7 +69,8 @@ class polynomial():
     #defined by c (where the bit 0 of c represents the coefficient of power 125).
     #Meaning coefficients[0] is the highest power
     def __init__(self, coefficients = None):
-        #Polynomial is a class which is agnostic to the underlying arithmetic type, and uses np.array as a container
+        #Polynomial is a class over GF(2) 
+        #Other than that it should be agnostic to the underlying arithmetic type (an element if GF(2^k) for some k), and uses np.array as a container
         newCoefficients = np.array(coefficients)
         self.coefficients = newCoefficients
         # if coefficients is not None:
@@ -208,29 +209,22 @@ class polynomial():
     def modulu(self, divisor):
         # Safety - no division by zero
         assert (not divisor.isZero())
+        # Warning - this is only over a binary field !
         one = self.coefficients[0].__class__(1)
         remainder = polynomial(copy.deepcopy(self.coefficients))
         divisorOrder = divisor.order()
         if divisorOrder == 0:
             remainder = polynomial( coefficients = [0])
         while remainder.order() >= divisorOrder and not remainder.isZero():
-            #print("inside remainder calc loop. Order is: ")
-            #print(remainder.order())
             i = remainder.getLeadingCoefficientIndex()
-            #print("Leading coefficient index is:")
-            #print(i)
-            #print("Leading coefficient is:")
-            #print(remainder.coefficients[i])
-            #if not remainder.coefficients[0].isZero():
             #kill ther leading coefficient
             fieldElementInverse = one / remainder.coefficients[i]
             temp = polynomial(copy.deepcopy(divisor.coefficients))
-            #print("lift value is "+str(remainder.order() - divisor.order()))
             temp.lift(remainder.order() - divisor.order())
-            #print("After lift, temp is:")
-            #temp.printValues()
             temp.timesScalar(fieldElementInverse)
-            remainder = remainder + temp
+            remainder = remainder + temp # Note + rather than -, all over a binary field
+            if np.isscalar(self.coefficients[0]):
+                remainder.coefficients = remainder.coefficients %2
             #print("And the new remainder is:")
             #remainder.printValues()
         remainder = polynomial(remainder.coefficients[-len(divisor.coefficients) + 1 : ])
@@ -239,28 +233,17 @@ class polynomial():
     def at(self, evaluationPoint):
         # No safety ! The multiplication between the evaluation point and the coefficients needs to make sense.
         # Initialize result as the zero of galois field  of the same class as evaluationPoint 
+        #print(evaluationPoint)
         result = evaluationPoint.__class__(0)
-        print("class of result when starting is: ")
-        print(result.__class__)
         # Initialize the helper gfElement to be the 1 of galois field  of the same class as evaluationPoint 
-        gfElement = evaluationPoint.__class__(1)
-        print("class of gfElement is :")
-        print(gfElement.__class__)
+        powerOfEvaluationPoint = evaluationPoint.__class__(1)
         for i in range(len(self.coefficients)):
             temp = self.coefficients[i]
-            #print("input to multiplication is "+ str(temp))
-            #helper = gfElement.mul(evaluationPoint.__class__(temp))
-            temp = (evaluationPoint.__class__(temp)).mul(gfElement)
-            #print("Class of temp after multiplication is :")
-            #print(temp.__class__)
-            #helper = gfElement.mul(temp)
-            #print("output from multiplication is "+ str(helper.__class__))
-            result = temp.plus(result) #.plus(temp)
-            print("Class of result in iteration " + str(i))
-            print(result.__class__)
-            gfElement = gfElement.mul(evaluationPoint)
-        print("class of result going out is:")
-        print(result.__class__)
+            #print(temp)
+            #temp = temp * gfElement # Note the change - instead of casting temp into the same type as the evaluation point, we assume they are of the same type !
+            #temp = (evaluationPoint.__class__(temp)).mul(gfElement)
+            result = result + temp * powerOfEvaluationPoint #.plus(temp)
+            powerOfEvaluationPoint = powerOfEvaluationPoint * evaluationPoint
         return result
     
     
@@ -298,7 +281,7 @@ class polynomial():
                 string += (" " + str(self.coefficients[power]) + "*X^" + str(len(self.coefficients) - power - 1))
         else:
             for power in range(len(self.coefficients)):
-                string += (" " + str(self.coefficients[power].value) + "*X^" + str(len(self.coefficients) - power - 1))
+                string += (" " + str(self.coefficients[power].getValue()) + "*X^" + str(len(self.coefficients) - power - 1))
         print(string)
             
 class gf128(polynomial):
@@ -309,13 +292,14 @@ class gf128(polynomial):
             else:
                 print("Class of provided value is " + str(value.__class__))
                 raise("An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients. ")
-        elif value == 0 or value == 1:
+        elif np.isscalar(value) and (value == 0 or value == 1):
+            #print("debugging value issue")
+            #print(value)
             coefficients = np.zeros(7, IEEE_BINARY_DTYPE)
             coefficients[-1] = value
             super().__init__(coefficients = coefficients)
         else:
-            print("Class of provided value is " + str(value.__class__))
-            raise("An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients.")
+            raise("Class of provided value is " + str(value.__class__) + "An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients.")
     
     def mul(self, other):
         #print("Inside mul")
@@ -361,6 +345,10 @@ class gf128(polynomial):
         result = False
         if other.__class__ == self.__class__:
             result = (other.getValue() == self.getValue())
+        elif other == 0:
+            result = np.all(self.getValue() == 0)
+        elif other == 1:
+            result = (np.all(self.getValue()[0 : -1] == 0) and (self.getValue()[-1] == 1))
         else:
             raise
         return result
@@ -380,7 +368,9 @@ def generateExponentAndLogTables():
     exponentTable[1] = f
     logarithmTable[stringF] = 1
     for i in range(2,127,1):
+        #print(i)
         b = b * a
+        #print(b.coefficients)
         b = b.modulu(polynomial([1,0,0,0,1,0,0,1]))
         f = []
         stringF = '' 

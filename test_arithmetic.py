@@ -134,3 +134,10 @@ def test_plus_bug2():
     testResult = polynomial([0])
     assert c == testResult
     
+
+def test_evaluate_at_value_bug():
+    a = gf128(1)
+    p = polynomial(coefficients=[a])
+    eD, _ =  generateExponentAndLogTables()
+    p.at(gf128(eD[0]))
+    
