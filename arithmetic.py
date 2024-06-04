@@ -50,8 +50,15 @@ class binaryFieldElement:
             result = (other.getValue() == self.getValue())
         elif other == 0 or other == 1:
             result = (self.getValue() == other)
+        else:
+            raise
         return result
-            
+    
+    def __div__(self, other):
+        return self.mul(other.inverse())
+
+    def __truediv__(self, other):
+        return self.mul(other.inverse())
     
     def getValue(self):
         return self.value
@@ -62,12 +69,7 @@ class polynomial():
     #defined by c (where the bit 0 of c represents the coefficient of power 125).
     #Meaning coefficients[0] is the highest power
     def __init__(self, coefficients = None):
-        #newCoefficients = []
-        #if np.isscalar(coefficients[0]):
-        #    for i in range(len(coefficients)):
-        #        newCoefficients.append(binaryFieldElement(coefficients[i]))
-        #else:
-        #    newCoefficients = copy.deepcopy(coefficients)
+        #Polynomial is a class which is agnostic to the underlying arithmetic type, and uses np.array as a container
         newCoefficients = np.array(coefficients)
         self.coefficients = newCoefficients
         # if coefficients is not None:
@@ -161,7 +163,8 @@ class polynomial():
                 newCoefficients.append(self.coefficients[0].__class__(0)) 
         #newCoefficients = np.zeros((liftBy + len(self.coefficients)), dtype = IEEE_BINARY_DTYPE)
         #newCoefficients[0 : len(self.coefficients)] = self.coefficients
-        self.coefficients = newCoefficients
+            newCoefficients = np.array(newCoefficients)    
+            self.coefficients = newCoefficients
         return
     
     def timesScalar(self, gfScalar):
@@ -205,6 +208,7 @@ class polynomial():
     def modulu(self, divisor):
         # Safety - no division by zero
         assert (not divisor.isZero())
+        one = self.coefficients[0].__class__(1)
         remainder = polynomial(copy.deepcopy(self.coefficients))
         divisorOrder = divisor.order()
         if divisorOrder == 0:
@@ -216,10 +220,10 @@ class polynomial():
             #print("Leading coefficient index is:")
             #print(i)
             #print("Leading coefficient is:")
-            #print(remainder.coefficients[i].value)
+            #print(remainder.coefficients[i])
             #if not remainder.coefficients[0].isZero():
             #kill ther leading coefficient
-            fieldElementInverse = remainder.coefficients[i].inverse()
+            fieldElementInverse = one / remainder.coefficients[i]
             temp = polynomial(copy.deepcopy(divisor.coefficients))
             #print("lift value is "+str(remainder.order() - divisor.order()))
             temp.lift(remainder.order() - divisor.order())
@@ -319,7 +323,7 @@ class gf128(polynomial):
         return result
         
     def inverse(self):
-        return
+        raise
     
     def binaryMul(self, other):
         if other.value == 0:
@@ -333,6 +337,30 @@ class gf128(polynomial):
     def plus(self, other):
         coefficients = (self.coefficients + other.coefficients) %2
         return gf128(coefficients)
+    
+    def __div__(self, other):
+        return self.mul(other.inverse())
+    
+    def __truediv__(self, other):
+        return self.mul(other.inverse())
+
+    def __add__(self, other):
+        return self.plus(other)
+     
+    def __sub__(self, other):
+        return self.minus(other)
+     
+    def __mul__(self, other):
+        return self.times(other)
+     
+    def __eq__(self, other):
+        result = False
+        if other.__class__ == self.__class__:
+            result = (other.getValue() == self.getValue())
+        else:
+            raise
+        return result
+     
 
 def generateExponentAndLogTables():
     exponentTable={}
@@ -358,5 +386,19 @@ def generateExponentAndLogTables():
         exponentTable[i] = f
         logarithmTable[stringF] = i
     return exponentTable, logarithmTable
+
+def generateInverseTable():
+    inverseDictionary = {}
+    a = gf128([0,0,0,0,0,1,0])
+    b = gf128([0,0,0,0,0,1,0])
+    one = gf128([0,0,0,0,0,1,0])
+    inverseDictionary[a] = a
+    for i in range(2,127,1):
+        b = b * a
+        temp = gf128([0,0,0,0,0,1,0])
+        while temp * b != one:
+            temp = temp * a
+        inverseDictionary[b] = temp
+    return inverseDictionary
 
 
