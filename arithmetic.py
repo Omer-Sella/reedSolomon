@@ -233,16 +233,16 @@ class polynomial():
     def at(self, evaluationPoint):
         # No safety ! The multiplication between the evaluation point and the coefficients needs to make sense.
         # Initialize result as the zero of galois field  of the same class as evaluationPoint 
-        #print(evaluationPoint)
+        
         result = evaluationPoint.__class__(0)
         # Initialize the helper gfElement to be the 1 of galois field  of the same class as evaluationPoint 
         powerOfEvaluationPoint = evaluationPoint.__class__(1)
         for i in range(len(self.coefficients)):
             temp = self.coefficients[i]
-            #print(temp)
             #temp = temp * gfElement # Note the change - instead of casting temp into the same type as the evaluation point, we assume they are of the same type !
             #temp = (evaluationPoint.__class__(temp)).mul(gfElement)
-            result = result + temp * powerOfEvaluationPoint #.plus(temp)
+            temp = temp * powerOfEvaluationPoint
+            result = result + temp# * powerOfEvaluationPoint #.plus(temp)
             powerOfEvaluationPoint = powerOfEvaluationPoint * evaluationPoint
         return result
     
@@ -339,7 +339,7 @@ class gf128(polynomial):
         return self.minus(other)
      
     def __mul__(self, other):
-        return self.times(other)
+        return self.mul(other)
      
     def __eq__(self, other):
         result = False
