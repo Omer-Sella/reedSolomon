@@ -4,6 +4,11 @@ Created on Tue Feb 27 11:36:27 2024
 
 @author: Omer
 """
+import os, sys
+reedSolomonProjectDir = os.environ.get('REEDSOLOMON')
+if reedSolomonProjectDir == None: 
+     reedSolomonProjectDir = "c:/users/omer/reedSolomon/reedSolomon/"
+sys.path.insert(0, reedSolomonProjectDir)
 import numpy as np
 import copy
 """
@@ -104,7 +109,7 @@ class polynomial():
     def getLeadingCoefficientIndex(self):
         i = 0
         length = len(self.coefficients)
-        while ( i < length) and (self.coefficients[i] == 0):
+        while ( i < length - 1) and (self.coefficients[i] == 0):
             i = i + 1
         return i
         
@@ -256,9 +261,10 @@ class polynomial():
         pOther = pOther.truncate()
         isEqual = True
         if pSelf.order() == pOther.order():
-            for i in range(len(pSelf.coefficients)):
-                if pSelf.coefficients[i].value != pOther.coefficients[i].value:
-                    isEqual = False
+            if np.isscalar(pSelf.coefficients[0]):
+                return np.all(pSelf.coefficients == pOther.coefficients)
+            else:
+                return np.all(pSelf.coefficients.getValue() == pOther.coefficients.getValue())
         else:
             isEqual = False
         
@@ -285,6 +291,10 @@ class polynomial():
         print(string)
             
 class gf128(polynomial):
+    
+    pathToInverseTable = reedSolomonProjectDir + "/gf128Inverse.npy"
+    inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()
+    
     def __init__(self, value):
         if hasattr(value, '__len__'):
             if len(value) == 7:
@@ -311,7 +321,11 @@ class gf128(polynomial):
         return result
         
     def inverse(self):
-        raise
+        if self.inverseTable is not None:
+            return gf128(self.inverseTable[str(self.getValue())])
+        else:
+            # Omer Sella: consider a verilog oriented implementation here, could be slow to run on a CPU but better than not working.
+            raise
     
     def binaryMul(self, other):
         if other.value == 0:
@@ -344,7 +358,7 @@ class gf128(polynomial):
     def __eq__(self, other):
         result = False
         if other.__class__ == self.__class__:
-            result = (other.getValue() == self.getValue())
+            result = (np.all(other.getValue() == self.getValue()))
         elif other == 0:
             result = np.all(self.getValue() == 0)
         elif other == 1:
@@ -353,6 +367,8 @@ class gf128(polynomial):
             raise
         return result
      
+    def __ne__(self, other):
+        return (not (self == other))
 
 def generateExponentAndLogTables():
     exponentTable={}
@@ -382,17 +398,21 @@ def generateExponentAndLogTables():
     return exponentTable, logarithmTable
 
 def generateInverseTable():
+    # A pretty lazy implementation of finding an inverse, we're only using this once so why bother.
     inverseDictionary = {}
-    a = gf128([0,0,0,0,0,1,0])
+    a = gf128([0,0,0,0,0,0,1])
+    temp = gf128([0,0,0,0,0,0,1])
+    key = str(a.getValue())
     b = gf128([0,0,0,0,0,1,0])
-    one = gf128([0,0,0,0,0,1,0])
-    inverseDictionary[a] = a
-    for i in range(2,127,1):
-        b = b * a
+    one = gf128([0,0,0,0,0,0,1])
+    inverseDictionary[key] = temp.getValue()
+    for i in range(1,127,1):
+        a = a * b
+        key = str(a.getValue())
         temp = gf128([0,0,0,0,0,1,0])
-        while temp * b != one:
-            temp = temp * a
-        inverseDictionary[b] = temp
+        while temp * a != one:
+            temp = temp * b
+        inverseDictionary[key] = temp.getValue()
     return inverseDictionary
 
 

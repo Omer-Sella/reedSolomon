@@ -11,7 +11,7 @@ if projectDir == None:
      projectDir = "c:/Users/Omer/802.3/"
 sys.path.insert(0, projectDir)
 reedSolomonProjectDir = os.environ.get('REEDSOLOMON')
-if True: #reedSolomonProjectDir == None: 
+if reedSolomonProjectDir == None: 
      reedSolomonProjectDir = "c:/users/omer/reedSolomon/reedSolomon/"
 sys.path.insert(0, reedSolomonProjectDir)
 from arithmetic import binaryFieldElement as galoisElement
@@ -30,3 +30,13 @@ def test_bchDecoder():
     correctedVector, correctionVector = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthActual = 126, codewordLengthMaximal = 126)
     assert (np.all(correctedVector == 0))
     
+def test_bchDecoder_single_bit_flip():
+    zeroData = np.zeros(110)
+    eD, _ =  generateExponentAndLogTables()
+    for i in range(110):
+        zeroData[i] = 1
+        encodedZeroData = bchEncoder(zeroData)
+        correctedVector, correctionVector = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthActual = 126, codewordLengthMaximal = 126)
+        assert correctedVector[i] == 1
+        assert np.sum(correctedVector) == 1
+        zeroData[i] = 0
