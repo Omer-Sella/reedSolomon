@@ -14,38 +14,37 @@ from arithmetic import generateExponentAndLogTables
 import numpy as np
 import time
 
-
-def bchDecoder(receivedBinaryVecotor, exponentDictionary, numberOfPowers, codewordLengthActual, codewordLengthMaximal):
-    correctionVector = np.zeros(codewordLengthActual, dtype = np.int32)
-    receivedBinaryX = polynomialClass(coefficients = list(map(gf128, receivedBinaryVecotor)))
-    # Calculate syndromes
+def syndromeCalculator(exponentDictionary, numberOfPowers, receivedBinaryX):
     syndromes = []
     for i in range(numberOfPowers):
         #print("exponent dictionary at location" + str(i) + " is "+ str(exponentDictionary[i]))
         helper = gf128(exponentDictionary[i])
-        #print("The class of the eval point is:")
-        #print(helper.__class__)
-        start =        time.time()        
         newSyndrome = receivedBinaryX.at(helper)
-        end = time.time()
-        #print("Time it took to evaluate at point is: " + str(end-start))
-        #print("Syndrome class is")
-        #print(newSyndrome.__class__)
+        print("Syndrome " + str(i) +" is ")
+        print(newSyndrome.getValue())
         syndromes.append(newSyndrome)
-        #print(syndromes)
+    return syndromes(exponentDictionary, numberOfPowers, receivedBinaryX)
+
+def bchDecoder(receivedBinaryVecotor, exponentDictionary, numberOfPowers, codewordLengthMaximal):
+    correctionVector = np.zeros(codewordLengthMaximal, dtype = np.int32)
+    receivedBinaryX = polynomialClass(coefficients = list(map(gf128, receivedBinaryVecotor[::-1])))
+    #receivedBinaryX.printValues()
+    # Calculate syndromes
+    syndromes = syndromeCalculator(exponentDictionary, numberOfPowers, receivedBinaryX)
     # Calculate error locator polynomial
     errorLocatorX = keyEquationSolver(polynomialClass, gf128, syndromes)
-    #print("*****")
     #errorLocatorX.printValues()
     # Chien search 
-    for i in range(codewordLengthActual):
-        #print(i)
-        #print(exponentDictionary[i])
-        #print(errorLocatorX.at(exponentDictionary[i]))
+    for i in range(0, codewordLengthMaximal):
+        # If \alpha ^i is a root of the error locator polynomial, then log( (\alpha ^i )^-1 ) is a location of an error.
         if (errorLocatorX.at(gf128(exponentDictionary[i]))) == 0: #Note: if we always use gf128, then cast the entire dictionary in advance
-            correctionVector[codewordLengthMaximal - i] = 1
-    correctedVector = receivedBinaryVecotor + correctionVector
-    return correctedVector, correctionVector
+            print("Found error in location i ==" + str(i))
+            # Since in GF(2^k) the multiplicative group is of order (2^k)-1, then the above value is just (codewordLengthMaximal - i) BUT (!!!) in IEEE notation the polynomials are "leading coefficient is leftmost" so it's just i ...
+            #correctionVector[codewordLengthMaximal - i] = 1
+            correctionVector[i] = 1
+    correctedVector = (receivedBinaryVecotor + correctionVector[0 : len(receivedBinaryVecotor)]) %2
+    #return correctedVector, correctionVector
+    return correctedVector, correctionVector, errorLocatorX #For debug, communicate the error locator as well
             
             
         

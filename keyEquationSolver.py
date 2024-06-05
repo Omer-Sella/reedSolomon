@@ -25,7 +25,11 @@ def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
          K = k + 1
          discrepancy = syndromes[k]
          for i in range(L):
-             diff =  cX.coefficients[(i+1)].times((syndromes[k-(i+1)]))
+             #print(cX.coefficients[(i+1)])
+             #print(syndromes[k-(i+1)])
+             diff =  cX.coefficients[(i+1)] * ((syndromes[k-(i+1)]))
+             #print(diff.__class__)
+             #diff.printValues()
              discrepancy = discrepancy + diff
          # ???discrepancy = syndromes + discrepancy
          if discrepancy == 0:

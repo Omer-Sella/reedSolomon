@@ -416,3 +416,82 @@ def generateInverseTable():
     return inverseDictionary
 
 
+class gf256(polynomial):
+    
+    #pathToInverseTable = reedSolomonProjectDir + "/gf256Inverse.npy"
+    #inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()
+    
+    def __init__(self, value):
+        if hasattr(value, '__len__'):
+            if len(value) == 8:
+                super().__init__(coefficients = value)
+            else:
+                print("Class of provided value is " + str(value.__class__))
+                raise("An element in GF(256) is a 8-tuple of binary values. Please avoid ambiguity by stating all 8 coefficients. ")
+        elif np.isscalar(value) and (value == 0 or value == 1):
+            #print("debugging value issue")
+            #print(value)
+            coefficients = np.zeros(8, IEEE_BINARY_DTYPE)
+            coefficients[-1] = value
+            super().__init__(coefficients = coefficients)
+        else:
+            raise("Class of provided value is " + str(value.__class__) + "An element in GF(256) is a 8-tuple of binary values. Please avoid ambiguity by stating all 8 coefficients.")
+    
+    def mul(self, other):
+        #print("Inside mul")
+        #print(other.__class__)
+        tempResult = self.times(other)
+        tempResult = tempResult.modulu(polynomial([1,0,0,0,1,1,1,0,1])) #x^8 + x^4 + x^3 + x^2 + 1 from Todd K. Moon page 243, example 6.9
+        #print(tempResult.coefficients)
+        result = self.__class__(value = tempResult.coefficients)
+        return result
+        
+    def inverse(self):
+        if self.inverseTable is not None:
+            return self.__class__(self.inverseTable[str(self.getValue())])
+        else:
+            # Omer Sella: consider a verilog oriented implementation here, could be slow to run on a CPU but better than not working.
+            raise
+    
+    def binaryMul(self, other):
+        if other.value == 0:
+            return self.__class__(value = 0)
+        else:
+            return self.__class__(value = self.coefficients)
+    
+    def getValue(self):
+        return self.coefficients
+    
+    def plus(self, other):
+        coefficients = (self.coefficients + other.coefficients) %2
+        return self.__class__(coefficients)
+    
+    def __div__(self, other):
+        return self.mul(other.inverse())
+    
+    def __truediv__(self, other):
+        return self.mul(other.inverse())
+
+    def __add__(self, other):
+        return self.plus(other)
+     
+    def __sub__(self, other):
+        return self.minus(other)
+     
+    def __mul__(self, other):
+        return self.mul(other)
+     
+    def __eq__(self, other):
+        result = False
+        if other.__class__ == self.__class__:
+            result = (np.all(other.getValue() == self.getValue()))
+        elif other == 0:
+            result = np.all(self.getValue() == 0)
+        elif other == 1:
+            result = (np.all(self.getValue()[0 : -1] == 0) and (self.getValue()[-1] == 1))
+        else:
+            raise
+        return result
+     
+    def __ne__(self, other):
+        return (not (self == other))

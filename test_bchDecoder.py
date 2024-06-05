@@ -27,16 +27,50 @@ def test_bchDecoder():
     encodedZeroData = bchEncoder(zeroData)
     eD, _ =  generateExponentAndLogTables()
     #print("Done generating log and exp dictionaries.")
-    correctedVector, correctionVector = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthActual = 126, codewordLengthMaximal = 126)
+    correctedVector, correctionVector, errorLocatorX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
     assert (np.all(correctedVector == 0))
     
 def test_bchDecoder_single_bit_flip():
     zeroData = np.zeros(110)
     eD, _ =  generateExponentAndLogTables()
-    for i in range(110):
-        zeroData[i] = 1
-        encodedZeroData = bchEncoder(zeroData)
-        correctedVector, correctionVector = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthActual = 126, codewordLengthMaximal = 126)
-        assert correctedVector[i] == 1
-        assert np.sum(correctedVector) == 1
-        zeroData[i] = 0
+    encodedZeroData = bchEncoder(zeroData)
+    for i in range(len(encodedZeroData)):
+        encodedZeroData[i] = 1
+        correctedVector, correctionVector, errorLocatorX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        print(correctedVector)
+        print("****")
+        print(correctionVector)
+        assert correctionVector[i] == 1
+        assert np.sum(correctionVector) == 1
+        assert errorLocatorX.order() == 1
+        encodedZeroData[i] = 0
+        
+def coverage_retrace_bug_error_in_first_coordinate(index):
+    zeroData = np.zeros(110)
+    eD, _ =  generateExponentAndLogTables()
+    encodedZeroData = bchEncoder(zeroData)
+    encodedZeroData[index] = 1
+    # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
+    correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+    for i in eD.keys():
+        print(eX.at(gf128(eD[i])).getValue())
+    return correctedVector, correctionVector, eX
+    
+
+def coverage_example_8_8_tkmoon():
+    pass
+
+def test_connection_polynomial_for_two_errors_explicit_calculation():   
+    zeroData = np.zeros(110)
+    eD, _ =  generateExponentAndLogTables()
+    encodedZeroData = bchEncoder(zeroData)
+    encodedZeroData[1] = 1
+    encodedZeroData[10] = 1
+    # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
+    correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+    
+    lambda0 = gf128(1)
+    lambda1 = syndromeAsGf128[0]
+    #lambda2 = (syndromeAsGf128[3] + (syndromeAsGf128[1] * syndromeAsGf128[1] * syndromeAsGf128[1]) / syndromeAsGf128[0])
+    explicitConnectionX = polynomial(coefficients = [lambda1, lambda0])
+    assert explicitConnectionX == cX

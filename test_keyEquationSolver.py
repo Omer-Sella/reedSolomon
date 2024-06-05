@@ -6,6 +6,7 @@ Created on Fri Mar 22 11:41:12 2024
 """
 from keyEquationSolver import *
 from arithmetic import binaryFieldElement as galoisElement
+from arithmetic import gf128, generateExponentAndLogTables
 from arithmetic import polynomial as polynomialClass
 
 def test_keyEquationSolver():
@@ -34,3 +35,12 @@ def test_keyEquationSolver():
     assert(cX.coefficients[2].value == 0)
     assert(cX.coefficients[3].value == 1)
     return 'OK'
+
+def test_keyEquationSolver_bug_connection_polynomial_for_one_error():   
+    eD, _ =  generateExponentAndLogTables()
+    syndromeAsGf128 = []
+    for i in range(16):
+        syndromeAsGf128.append(gf128(eD[i]))
+    cX = keyEquationSolver(polynomialClass, gf128, syndromeAsGf128)
+    cX.printValues()
+    assert cX.order() == 1
