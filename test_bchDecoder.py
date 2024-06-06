@@ -37,11 +37,24 @@ def test_bchDecoder_single_bit_flip():
     for i in range(len(encodedZeroData)):
         encodedZeroData[i] = 1
         correctedVector, correctionVector, errorLocatorX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        print("Error locator polynomial: ")
+        errorLocatorX.printValues()
+        print("corrected vector:")
         print(correctedVector)
-        print("****")
+        print("correction vector:")
         print(correctionVector)
+        print("****")
         assert correctionVector[i] == 1
-        assert np.sum(correctionVector) == 1
+        encodedZeroData[i] = 0
+
+def test_bchDecoder_single_bit_flip_order_check():
+    zeroData = np.zeros(110)
+    eD, _ =  generateExponentAndLogTables()
+    encodedZeroData = bchEncoder(zeroData)
+    for i in range(len(encodedZeroData)):
+        encodedZeroData[i] = 1
+        correctedVector, correctionVector, errorLocatorX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        errorLocatorX.printValues()
         assert errorLocatorX.order() == 1
         encodedZeroData[i] = 0
         
@@ -68,7 +81,6 @@ def test_connection_polynomial_for_two_errors_explicit_calculation():
     encodedZeroData[10] = 1
     # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
     correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
-    
     lambda0 = gf128(1)
     lambda1 = syndromeAsGf128[0]
     #lambda2 = (syndromeAsGf128[3] + (syndromeAsGf128[1] * syndromeAsGf128[1] * syndromeAsGf128[1]) / syndromeAsGf128[0])

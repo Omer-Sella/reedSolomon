@@ -264,7 +264,7 @@ class polynomial():
             if np.isscalar(pSelf.coefficients[0]):
                 return np.all(pSelf.coefficients == pOther.coefficients)
             else:
-                return np.all(pSelf.coefficients.getValue() == pOther.coefficients.getValue())
+                return np.all(pSelf.coefficients == pOther.coefficients)
         else:
             isEqual = False
         

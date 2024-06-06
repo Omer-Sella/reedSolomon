@@ -6,7 +6,7 @@ Created on Fri Mar 22 11:41:12 2024
 """
 from keyEquationSolver import *
 from arithmetic import binaryFieldElement as galoisElement
-from arithmetic import gf128, generateExponentAndLogTables
+from arithmetic import gf128, generateExponentAndLogTables, polynomial
 from arithmetic import polynomial as polynomialClass
 
 def test_keyEquationSolver():
@@ -29,18 +29,31 @@ def test_keyEquationSolver():
     for s in syndromes:
         syndromesAsGFElements.append(galoisElement(s))
     cX = keyEquationSolver(polynomialClass, galoisElement, syndromesAsGFElements)
-    #cX.printValues()
+    cX.printValues()
     assert(cX.coefficients[0].value == 1)
     assert(cX.coefficients[1].value == 1)
     assert(cX.coefficients[2].value == 0)
     assert(cX.coefficients[3].value == 1)
     return 'OK'
 
-def test_keyEquationSolver_bug_connection_polynomial_for_one_error():   
+def test_keyEquationSolver_bug_connection_polynomial_for_one_error_order_check():   
     eD, _ =  generateExponentAndLogTables()
     syndromeAsGf128 = []
     for i in range(16):
         syndromeAsGf128.append(gf128(eD[i]))
     cX = keyEquationSolver(polynomialClass, gf128, syndromeAsGf128)
-    cX.printValues()
+    #cX.printValues()
     assert cX.order() == 1
+    
+def test_keyEquationSolver_bug_connection_polynomial_for_one_error_explicit_calculation():   
+    eD, _ =  generateExponentAndLogTables()
+    syndromeAsGf128 = []
+    for i in range(16):
+        syndromeAsGf128.append(gf128(eD[i]))
+    cX = keyEquationSolver(polynomialClass, gf128, syndromeAsGf128)
+    lambda0 = gf128(1)
+    lambda1 = syndromeAsGf128[0]
+    #lambda2 = (syndromeAsGf128[3] + (syndromeAsGf128[1] * syndromeAsGf128[1] * syndromeAsGf128[1]) / syndromeAsGf128[0])
+    explicitConnectionX = polynomial(coefficients = [lambda1, lambda0])
+    assert explicitConnectionX == cX
+    

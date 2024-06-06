@@ -6,13 +6,13 @@ Created on Tue Feb 27 10:03:01 2024
 """
 #from arithmetic import binaryFieldElement as galoisElement
 #from arithmetic import polynomial as polynomialClass
+import copy
 
 def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
      # Key Equation Solver over an extension binary field
      # See Todd K. Moon page 258
      # Syndromes need to be passed as a list of syndromes of class galoisElementClass
      assert (syndromes[0].__class__ == galoisElementClass)
-     
      L = 0 #Current Length of the LFSR
      #cX = polynomialClass(coefficients = [1]) #Connection polynomial
      #pX = polynomialClass(coefficients = [1]) #The connection polynomial before last change
@@ -25,14 +25,13 @@ def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
          K = k + 1
          discrepancy = syndromes[k]
          for i in range(L):
-             #print(cX.coefficients[(i+1)])
-             #print(syndromes[k-(i+1)])
              diff =  cX.coefficients[(i+1)] * ((syndromes[k-(i+1)]))
-             #print(diff.__class__)
-             #diff.printValues()
              discrepancy = discrepancy + diff
          # ???discrepancy = syndromes + discrepancy
+         #print("Now outside the loop on L. This should be 0 when k==3:")
+         #print(discrepancy.getValue() == 0)
          if discrepancy == 0:
+             print("DISCREPANCY ==0 !!!")
              l = l + 1
          else:
              if (2 * L) >= K: #Note the fix k replaced with K
@@ -44,14 +43,17 @@ def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
                  tX = cX
                  hX = pX.timesScalar(discrepancy.times(oldDiscrepancy.inverse()))
                  hX.lift(l)
+                 cX.printValues()
                  cX = cX - hX
+                 cX.printValues()
                  L = K - L
                  pX = tX
-                 oldDiscrepancy = discrepancy
+                 oldDiscrepancy = copy.deepcopy(discrepancy)
                  l = 1
-         #print("| K | syndromes[k] | disc | l  | L   | old discrepancy |")
-         #print("| %d | %d            | %d    | %d  | %d   | %d              |" % (K, syndromes[k], discrepancy.value, l, L,  oldDiscrepancy.value))
-        
+         #print("| K | syndromes[k]    | disc | l  | L   | old discrepancy |")
+         #print("| " +str(K) +"| " +str(syndromes[k].getValue()) + "   | "+ str(discrepancy.getValue()) + "  | " + str(l) + "  | " +  str(L) + "   | " + str(oldDiscrepancy.getValue()) +"      |" )
+         #print("*********************")
+         #cX.printValues()
      return cX
  
 def findErrorEvaluator(syndromesPolynomial, connectionPolynomial, t):

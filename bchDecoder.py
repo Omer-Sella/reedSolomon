@@ -20,10 +20,8 @@ def syndromeCalculator(exponentDictionary, numberOfPowers, receivedBinaryX):
         #print("exponent dictionary at location" + str(i) + " is "+ str(exponentDictionary[i]))
         helper = gf128(exponentDictionary[i])
         newSyndrome = receivedBinaryX.at(helper)
-        print("Syndrome " + str(i) +" is ")
-        print(newSyndrome.getValue())
         syndromes.append(newSyndrome)
-    return syndromes(exponentDictionary, numberOfPowers, receivedBinaryX)
+    return syndromes
 
 def bchDecoder(receivedBinaryVecotor, exponentDictionary, numberOfPowers, codewordLengthMaximal):
     correctionVector = np.zeros(codewordLengthMaximal, dtype = np.int32)
@@ -38,7 +36,6 @@ def bchDecoder(receivedBinaryVecotor, exponentDictionary, numberOfPowers, codewo
     for i in range(0, codewordLengthMaximal):
         # If \alpha ^i is a root of the error locator polynomial, then log( (\alpha ^i )^-1 ) is a location of an error.
         if (errorLocatorX.at(gf128(exponentDictionary[i]))) == 0: #Note: if we always use gf128, then cast the entire dictionary in advance
-            print("Found error in location i ==" + str(i))
             # Since in GF(2^k) the multiplicative group is of order (2^k)-1, then the above value is just (codewordLengthMaximal - i) BUT (!!!) in IEEE notation the polynomials are "leading coefficient is leftmost" so it's just i ...
             #correctionVector[codewordLengthMaximal - i] = 1
             correctionVector[i] = 1
