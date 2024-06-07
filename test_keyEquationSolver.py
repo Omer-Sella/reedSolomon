@@ -8,7 +8,7 @@ from keyEquationSolver import *
 from arithmetic import binaryFieldElement as galoisElement
 from arithmetic import gf128, generateExponentAndLogTables, polynomial
 from arithmetic import polynomial as polynomialClass
-
+import numpy as np
 def test_keyEquationSolver():
     #Testing the Todd K. Moon version using example on page 281 (laboratory 6 ex. 2)
     # As well as table 6.5 on page 259
@@ -21,7 +21,7 @@ def test_keyEquationSolver():
     #|6 | 0    | 0            | 1+x+x^3     | 3 | 1+x  | 1 | 1
     #|7 | 0    | 0            | 1+x+x^3     | 3 | 1+x  | 1 | 1
 
-    import numpy as np
+
     #r = np.array([0,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0]) #This is equivalent to r(x) = x + x^3 + x^8
     syndromes = np.array([ 1, 1, 1 , 0, 1 , 0, 0])
     #syndromes = np.array([ 0,0,1,0,1,1,1])
@@ -37,10 +37,21 @@ def test_keyEquationSolver():
 
 
 def test_keyEquationSolver_bug_connection_polynomial_for_one_error_order_check():   
-    eD, _ =  generateExponentAndLogTables()
-    syndromeAsGf128 = []
-    for i in range(16):
-        syndromeAsGf128.append(gf128(eD[i]))
+    
+    #Testing the Todd K. Moon version using example on page 281 (laboratory 6 ex. 2)
+    # As well as table 6.5 on page 259
+    #|K | S[k]                       | discrepancyK    | cX                         | L | pX   | l | oldDiscrepancy == d_m in Moon
+    #|1 | [0,0,0,0,0,0,1]            | [0,0,0,0,0,0,1] | 1 + x                      | 1 | 1    | 1 | 1
+    #|2 | \alpha = [0,0,0,0,0,1,0]   | [0,0,0,0,0,1,1] | 1 + [0,0,0,0,0,1,1]x       | 1 | 1    | 2 | 1
+    #|3 | \alpha^2 = [0,0,0,0,1,0,0] | 0               | 1 + [0,0,0,0,0,1,0]x       | 1 | 1    | 3 | 1
+    
+    
+    
+    #|4 | \alpha^3 = [0,0,0,1,0,0,0] | 0               | 1 + [0,0,0,0,0,1,0]x       | 1 | 1    | 4 | 1
+    #|5 | \alpha^4 = [0,0,1,0,0,0,0] | 0               | 1 + [0,0,0,0,0,1,0]x       | 1 | 1    | 5 | 1
+    
+    syndromes = np.array([[0,0,0,0,0,0,1] , [0,0,0,0,0,1,0], [0,0,0,0,1,0,0],  [0,0,0,1,0,0,0],  [0,0,1,0,0,0,0]])
+    syndromeAsGf128 = list(map(gf128, syndromes))
     cX = keyEquationSolver(polynomialClass, gf128, syndromeAsGf128)
     #cX.printValues()
     assert cX.order() == 1

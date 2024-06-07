@@ -19,17 +19,38 @@ def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
      cX = polynomialClass(coefficients = [galoisElementClass(1)]) #Connection polynomial
      pX = polynomialClass(coefficients = [galoisElementClass(1)]) #The connection polynomial before last change
      hX = polynomialClass(coefficients = [galoisElementClass(0)])
+     tX = polynomialClass(coefficients = [galoisElementClass(0)])
      l = 1
      oldDiscrepancy = galoisElementClass(value = 1) #was 1  but I think might be wrong
      for k in range(len(syndromes)):
          K = k + 1
-         discrepancy = syndromes[k]
-         for i in range(L):
-             diff =  cX.coefficients[(i+1)] * ((syndromes[k-(i+1)]))
-             discrepancy = discrepancy + diff
+         #discrepancy = syndromes[k]
+         if k ==2:
+             print("Now outside the loop on L. This should be alpha^2 when k==2:")
+             print(discrepancy.getValue())
+        if k > 0 :
+             i = 1
+             while i <= L: #for i in range(1, L, 1):
+                 #diff =  cX.coefficients[(i+1)] * ((syndromes[k-(i+1)]))
+                 ### BUG ! our notation of polynomials is leading coefficient is actually at index 0 !
+                 helper = cX.coefficients[i] * syndromes[k - i]
+                 if k == 2:
+                     #print("syndromes[k - i]")
+                     #print(syndromes[k - i].getValue())
+                     print("cX.coefficients[len(cX.coefficients) - i]" )
+                     print(cX.coefficients[len(cX.coefficients) - i].getValue())
+                     print("cX.coefficients[i]" )
+                     print(cX.coefficients[i].getValue())
+                     print("their multiplication:")
+                     print(helper.getValue())
+                     print("cX is :")
+                     cX.printValues()
+                 discrepancy = discrepancy + (helper)
+                 i = i + 1
          # ???discrepancy = syndromes + discrepancy
-         #print("Now outside the loop on L. This should be 0 when k==3:")
-         #print(discrepancy.getValue() == 0)
+         if k ==2:
+             print("Now outside the loop on L. This should be 0 when k==2:")
+             print(discrepancy.getValue())
          if discrepancy == 0:
              print("DISCREPANCY ==0 !!!")
              l = l + 1
@@ -37,15 +58,17 @@ def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
              if (2 * L) >= K: #Note the fix k replaced with K
                  hX = pX.timesScalar(discrepancy.times(oldDiscrepancy.inverse()))
                  hX.lift(l)
+                 #print("hX == ")
+                 #hX.printValues()
                  cX = cX - hX
+                 #print("cX == ")
+                 #cX.printValues()
                  l = l + 1
              else:
                  tX = cX
                  hX = pX.timesScalar(discrepancy.times(oldDiscrepancy.inverse()))
                  hX.lift(l)
-                 cX.printValues()
                  cX = cX - hX
-                 cX.printValues()
                  L = K - L
                  pX = tX
                  oldDiscrepancy = copy.deepcopy(discrepancy)
