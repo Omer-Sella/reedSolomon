@@ -251,6 +251,9 @@ class polynomial():
             powerOfEvaluationPoint = powerOfEvaluationPoint * evaluationPoint
         return result
     
+    def getCoefficient(self, index):
+        return self.coefficients[len(self.coefficients) - (index + 1)]
+    
     
                 
     def __eq__(self, other):
