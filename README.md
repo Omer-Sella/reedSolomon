@@ -1,4 +1,4 @@
-![workflow badge](https://github.com/Omer-Sella/reedSolomon/actions/workflows/arithmetic.yml/badge.svg)
+
 ![workflow badge](https://github.com/Omer-Sella/reedSolomon/actions/workflows/keyEquationSolver.yml/badge.svg)
 
 
