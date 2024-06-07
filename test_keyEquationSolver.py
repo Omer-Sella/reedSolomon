@@ -34,7 +34,7 @@ def test_keyEquationSolver():
     assert(cX.coefficients[1].value == 1)
     assert(cX.coefficients[2].value == 0)
     assert(cX.coefficients[3].value == 1)
-    return 'OK'
+
 
 def test_keyEquationSolver_bug_connection_polynomial_for_one_error_order_check():   
     eD, _ =  generateExponentAndLogTables()
