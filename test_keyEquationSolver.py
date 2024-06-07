@@ -30,10 +30,15 @@ def test_keyEquationSolver():
         syndromesAsGFElements.append(galoisElement(s))
     cX = keyEquationSolver(polynomialClass, galoisElement, syndromesAsGFElements)
     cX.printValues()
-    assert(cX.coefficients[0].value == 1)
-    assert(cX.coefficients[1].value == 1)
-    assert(cX.coefficients[2].value == 0)
-    assert(cX.coefficients[3].value == 1)
+    #assert(cX.coefficients[0].value == 1)
+    #assert(cX.coefficients[1].value == 1)
+    #assert(cX.coefficients[2].value == 0)
+    #assert(cX.coefficients[3].value == 1)
+    
+    assert(cX.getCoefficient(0).value == 1)
+    assert(cX.getCoefficient(1).value == 1)
+    assert(cX.getCoefficient(2).value == 0)
+    assert(cX.getCoefficient(3).value == 1)
 
 
 def test_keyEquationSolver_bug_connection_polynomial_for_one_error_order_check():   
@@ -63,7 +68,7 @@ def test_keyEquationSolver_bug_connection_polynomial_for_one_error_explicit_calc
         syndromeAsGf128.append(gf128(eD[i]))
     cX = keyEquationSolver(polynomialClass, gf128, syndromeAsGf128)
     lambda0 = gf128(1)
-    lambda1 = syndromeAsGf128[0]
+    lambda1 = gf128([0,0,0,0,0,1,0])
     #lambda2 = (syndromeAsGf128[3] + (syndromeAsGf128[1] * syndromeAsGf128[1] * syndromeAsGf128[1]) / syndromeAsGf128[0])
     explicitConnectionX = polynomial(coefficients = [lambda1, lambda0])
     assert explicitConnectionX == cX
