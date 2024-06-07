@@ -7,7 +7,7 @@ Created on Tue Feb 27 11:36:27 2024
 import os, sys
 reedSolomonProjectDir = os.environ.get('REEDSOLOMON')
 if reedSolomonProjectDir == None: 
-     reedSolomonProjectDir = "c:/users/omer/reedSolomon/reedSolomon/"
+     reedSolomonProjectDir = os.getcwd()#"c:/users/omer/reedSolomon/reedSolomon/"
 sys.path.insert(0, reedSolomonProjectDir)
 import numpy as np
 import copy
