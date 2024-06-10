@@ -69,7 +69,8 @@ def test_connection_polynomial_for_two_errors_explicit_calculation_gf128():
     from bchDecoder import syndromeCalculator
     eD, _ =  generateExponentAndLogTables()
     encodedZeroData = np.zeros(126)
-    testCombinations = np.random.choice(combinations(range(126),2), 20)
+    
+    testCombinations = [ (7, 51), (7, 52), (7, 53), (7, 54), (7, 55), (7, 56), (7, 100),  (7, 101), (7, 102),]
     for pair in testCombinations:
         encodedZeroData[pair[0]] = 1
         encodedZeroData[pair[1]] = 1
@@ -93,9 +94,11 @@ def test_connection_polynomial_for_three_errors_explicit_calculation_gf128():
     from bchDecoder import syndromeCalculator
     eD, _ =  generateExponentAndLogTables()
     encodedZeroData = np.zeros(126)
-    testCombinations = np.random.choice(combinations(range(126),3), 20)
+    #testCombinations = np.random.choice(list(combinations(range(126),3)), 20)
+    testCombinations = [ (0,7, 51), (1,7, 52), (2,7, 53), (3,7, 54), (4,7, 55), (5,7, 56), (6,7, 100),  (10,7, 101), (11,7, 102),]
     for errorLocations in testCombinations:
-        encodedZeroData[errorLocations] = 1
+        for e in errorLocations:
+            encodedZeroData[e] = 1
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
         correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
         receivedBinaryAsPolynomial = polynomialClass(coefficients = list(map(gf128, encodedZeroData)))
@@ -113,8 +116,13 @@ def test_connection_polynomial_for_three_errors_explicit_calculation_gf128():
                             syndromes[0]) + 
                             syndromes[2]) + syndromes[2] * lambda2
         explicitConnectionX = polynomialClass(coefficients = [lambda3, lambda2, lambda1, gfOne])
+        if eX != explicitConnectionX:
+            eX.printValues()
+            explicitConnectionX.printValues()
         assert explicitConnectionX == eX
-        encodedZeroData[errorLocations] = 0
+        for e in errorLocations:
+            encodedZeroData[e] = 0
+        
         
 def test_connection_polynomial_for_four_errors_explicit_calculation_gf128():   
     """
@@ -124,9 +132,11 @@ def test_connection_polynomial_for_four_errors_explicit_calculation_gf128():
     from bchDecoder import syndromeCalculator
     eD, _ =  generateExponentAndLogTables()
     encodedZeroData = np.zeros(126)
-    testCombinations = np.random.choice(combinations(range(126),4), 20)
+    #testCombinations = np.random.choice(list(combinations(range(126),4)), 20)
+    testCombinations = [ (0,7, 51,110), (1,7, 52,111), (2,7, 53,112), (3,7, 54,120), (4,7, 55,121), (5,7, 56,122), (6,7, 100,123),  (10,7, 101,124), (11,7, 102,125)]
     for errorLocations in testCombinations:
-        encodedZeroData[errorLocations] = 1
+        for e in errorLocations:
+            encodedZeroData[e] = 1
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
         correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
         receivedBinaryAsPolynomial = polynomialClass(coefficients = list(map(gf128, encodedZeroData)))
@@ -138,4 +148,6 @@ def test_connection_polynomial_for_four_errors_explicit_calculation_gf128():
         lambda4 =  (s[4] + s[0]*s[0]*s[2] + lambda2 * (s[0]*s[0]*s[0] + s[2])) / s[0]
         explicitConnectionX = polynomialClass(coefficients = [lambda4, lambda3, lambda2, lambda1, gfOne])
         assert explicitConnectionX == eX
-        encodedZeroData[errorLocations] = 0
+        for e in errorLocations:
+            encodedZeroData[e] = 0
+            

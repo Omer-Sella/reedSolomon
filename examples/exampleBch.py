@@ -25,10 +25,9 @@ def example_binarySymmetricChannel():
     parity = data.modulu(gX)
     data.coefficients[len(data.coefficients) - gX.order() : ] = parity.coefficients
     encodedBinaryData = np.array([data.coefficients[i].value for i in range(len(data.coefficients))])
-    # Flip 2 bits
+    # Flip 2 bit
     errorLocations = np.random.choice(126,2,replace = False)
     encodedBinaryData[errorLocations] = 1 - encodedBinaryData[errorLocations]
-    
     eD, _ =  generateExponentAndLogTables()
     correctedVector, correctionVector, errorLocatorX = bchDecoder( receivedBinaryVecotor = encodedBinaryData,
                                                                   exponentDictionary = eD,
