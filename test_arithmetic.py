@@ -141,3 +141,26 @@ def test_evaluate_at_value_bug():
     eD, _ =  generateExponentAndLogTables()
     p.at(gf128(eD[0]))
     
+def test_noZeroDivision():
+    from itertools import combinations
+    eD, _ =  generateExponentAndLogTables()
+    for combination in combinations(range(len(eD.keys())), 2):
+        assert ((gf128(eD[combination[0]]) * gf128(eD[combination[1]])) != 0)
+        
+def test_plusCommutativity():
+    from itertools import combinations
+    eD, _ =  generateExponentAndLogTables()
+    for combination in combinations(range(len(eD.keys())), 2):
+        a = gf128(eD[combination[0]]) + gf128(eD[combination[1]])
+        b = gf128(eD[combination[1]]) + gf128(eD[combination[0]])
+        assert (a == b)
+        
+def test_timesCommutativity():
+    from itertools import combinations
+    eD, _ =  generateExponentAndLogTables()
+    for combination in combinations(range(len(eD.keys())), 2):
+        a = gf128(eD[combination[0]]) * gf128(eD[combination[1]])
+        b = gf128(eD[combination[1]]) * gf128(eD[combination[0]])
+        assert (a == b)
+    
+    

@@ -72,4 +72,5 @@ def test_keyEquationSolver_bug_connection_polynomial_for_one_error_explicit_calc
     #lambda2 = (syndromeAsGf128[3] + (syndromeAsGf128[1] * syndromeAsGf128[1] * syndromeAsGf128[1]) / syndromeAsGf128[0])
     explicitConnectionX = polynomial(coefficients = [lambda1, lambda0])
     assert explicitConnectionX == cX
+
     

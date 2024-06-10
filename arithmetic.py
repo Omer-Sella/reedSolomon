@@ -40,6 +40,9 @@ class binaryFieldElement:
     def isZero(self):
         return (self.value == 0)
     
+    def mul(self, other):
+        return self.times(other)
+    
     def __add__(self, other):
         return self.plus(other)
     
