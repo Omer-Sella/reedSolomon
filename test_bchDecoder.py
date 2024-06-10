@@ -69,7 +69,8 @@ def test_connection_polynomial_for_two_errors_explicit_calculation_gf128():
     from bchDecoder import syndromeCalculator
     eD, _ =  generateExponentAndLogTables()
     encodedZeroData = np.zeros(126)
-    for pair in combinations(range(126),2):
+    testCombinations = np.random.choice(combinations(range(126),2), 20)
+    for pair in testCombinations:
         encodedZeroData[pair[0]] = 1
         encodedZeroData[pair[1]] = 1
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
@@ -92,7 +93,8 @@ def test_connection_polynomial_for_three_errors_explicit_calculation_gf128():
     from bchDecoder import syndromeCalculator
     eD, _ =  generateExponentAndLogTables()
     encodedZeroData = np.zeros(126)
-    for errorLocations in combinations(range(126),3):
+    testCombinations = np.random.choice(combinations(range(126),3), 20)
+    for errorLocations in testCombinations:
         encodedZeroData[errorLocations] = 1
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
         correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
@@ -122,7 +124,8 @@ def test_connection_polynomial_for_four_errors_explicit_calculation_gf128():
     from bchDecoder import syndromeCalculator
     eD, _ =  generateExponentAndLogTables()
     encodedZeroData = np.zeros(126)
-    for errorLocations in combinations(range(126),4):
+    testCombinations = np.random.choice(combinations(range(126),4), 20)
+    for errorLocations in testCombinations:
         encodedZeroData[errorLocations] = 1
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
         correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)

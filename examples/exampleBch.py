@@ -13,7 +13,7 @@ import numpy as np
 from arithmetic import generateExponentAndLogTables, polynomial, gf128, binaryFieldElement as gf2
 from bchDecoder import bchDecoder
 
-def example_roundtripBinarySymmetricChannel():
+def example_binarySymmetricChannel():
     # Create the generator polynomial with coefficients [1, 0, 1, 0, 0, 1,    1,    1,0 ,1, 0,1, 0, 1, 0, 1, 1] as a polynomial over gf128
     gX = polynomial( coefficients = list(map(gf2, np.array([1, 0, 1, 0, 0, 1,    1,    1,0 ,1, 0,1, 0, 1, 0, 1, 1]) )))
     #
@@ -26,7 +26,7 @@ def example_roundtripBinarySymmetricChannel():
     data.coefficients[len(data.coefficients) - gX.order() : ] = parity.coefficients
     encodedBinaryData = np.array([data.coefficients[i].value for i in range(len(data.coefficients))])
     # Flip 2 bits
-    errorLocations = np.random.choice(126,1,replace = False)
+    errorLocations = np.random.choice(126,2,replace = False)
     encodedBinaryData[errorLocations] = 1 - encodedBinaryData[errorLocations]
     
     eD, _ =  generateExponentAndLogTables()
@@ -35,7 +35,7 @@ def example_roundtripBinarySymmetricChannel():
                                                                   numberOfPowers = 16,
                                                                   codewordLengthMaximal = 127)
     errorLocatorX.printValues()
-    print(np.where(correctionVector == 1))
+    
     
 def example_cacheABinaryEncoder():
     """
