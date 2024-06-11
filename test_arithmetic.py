@@ -163,4 +163,35 @@ def test_timesCommutativity():
         b = gf128(eD[combination[1]]) * gf128(eD[combination[0]])
         assert (a == b)
     
+# def test_polynomialMultiplication():
+#     eD, _ =  generateExponentAndLogTables()
+#     generatorX = polynomial(coefficients = [gf128(1)])
+#     for i in range(16):
+#         linearFactor = polynomial(coefficients = [gf128(1), gf128(eD[i+1])])
+#         generatorX = generatorX * linearFactor
+#         generatorX.printValues()
+
+def test_chienSearch():
+    eD, _ =  generateExponentAndLogTables()
+    # g(x) =      x16 +  x14 +    x11 + x10 + x9 + x7 + x5 +  x3 +  x+ 1
+    gX = polynomial(coefficients = list(map(gf128,np.array([1,0,1,0,0,1,1,1,0,1,0,1,0,1,0,1,1]))))
+    p1X = polynomial(coefficients = list(map(gf128,np.array([1,0,0,0,1,0,0,1]))))
+    p2X = polynomial(coefficients = list(map(gf128,np.array([1,0,0,0,1,1,1,1]))))
+    #[[63, [0, 0, 0, 1, 0, 1, 0]],
+    # [95, [0, 1, 1, 1, 1, 0, 0]],
+    # [111, [1, 1, 1, 1, 1, 1, 0]],
+    # [119, [1, 1, 0, 0, 0, 1, 0]],
+    # [123, [1, 0, 0, 1, 1, 0, 0]],
+    # [125, [0, 1, 0, 0, 0, 1, 0]],
+    # [126, [1, 0, 0, 0, 1, 0, 0]]]
+    
+    #[[31, [0, 0, 0, 0, 0, 1, 1]],
+    #[62, [0, 0, 0, 0, 1, 0, 1]],
+    #[79, [0, 0, 1, 0, 1, 0, 1]],    
+    #[103, [0, 0, 0, 0, 1, 1, 1]],
+    #[115, [0, 0, 1, 0, 1, 1, 1]],
+    #[121, [0, 0, 1, 0, 0, 1, 1]],
+    #[124, [0, 0, 1, 0, 0, 0, 1]]]
+    p3X = polynomial(coefficients = list(map(gf128,np.array([1,1]))))
+    assert (gX == p1X * p2X * p3X * p3X)
     

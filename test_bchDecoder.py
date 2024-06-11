@@ -34,7 +34,13 @@ def test_bchDecoder_single_bit_flip():
                                                                       codewordLengthMaximal = 127)
         #errorLocatorX.printValues()
         #print(np.where(correctionVector == 1))
-        assert correctionVector[i] == 1
+        # Error found in location i
+        assert correctionVector[i] == 1 
+        # Only one error was found
+        assert (np.sum(correctionVector) == 1)
+        # All errors were fixed
+        assert (np.sum(correctedVector) == 0)
+        # Reset the test vector
         encodedZeroData[i] = 0
 
 def test_bchDecoder_single_bit_flip_order_check():
@@ -46,6 +52,37 @@ def test_bchDecoder_single_bit_flip_order_check():
         assert errorLocatorX.order() == 1
         encodedZeroData[i] = 0
         
+def coverage_bchDecoder_two_bit_flips():   
+    """
+    This function checks exhausitively, that all combinations of two bit flips are correctable.
+    I removed it from being a test function because it takes too long.
+    """
+    from itertools import combinations
+    from bchDecoder import syndromeCalculator
+    eD, _ =  generateExponentAndLogTables()
+    encodedZeroData = np.zeros(126)
+    #testCombinations = [ (7, 51), (7, 52), (7, 53), (7, 54), (7, 55), (7, 56), (7, 100),  (7, 101), (7, 102),]
+    testCombinations = list(combinations(range(126),2))
+    for pair in testCombinations:
+        encodedZeroData[pair[0]] = 1
+        encodedZeroData[pair[1]] = 1
+        # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
+        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        receivedBinaryAsPolynomial = polynomialClass(coefficients = list(map(gf128, encodedZeroData)))
+        syndromes = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
+        # Error found in both locations
+        assert correctionVector[pair[0]] == 1 
+        assert correctionVector[pair[1]] == 1 
+        # Only two errors were found
+        assert (np.sum(correctionVector) == 2)
+        # All errors were fixed
+        assert (np.sum(correctedVector) == 0)
+        print(pair)
+        
+        
+        encodedZeroData[pair[0]] = 0
+        encodedZeroData[pair[1]] = 0
+        
 def coverage_retrace_bug_error_in_first_coordinate(index):
     encodedZeroData = np.zeros(126)
     eD, _ =  generateExponentAndLogTables()
@@ -55,12 +92,11 @@ def coverage_retrace_bug_error_in_first_coordinate(index):
     for i in eD.keys():
         print(eX.at(gf128(eD[i])).getValue())
     return correctedVector, correctionVector, eX
-    
 
-def coverage_example_8_8_tkmoon():
-    pass
 
-    
+
+        
+
 def test_connection_polynomial_for_two_errors_explicit_calculation_gf128():   
     """
     Explicit calculation using Todd K. Moon page 252

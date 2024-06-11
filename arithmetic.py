@@ -185,12 +185,29 @@ class polynomial():
     def times(self, other):
         i = 0
         length = len(other.coefficients)
-        result = polynomial([0])
+        #print(self.coefficients[0].__class__)
+        #print(other.coefficients[0].__class__)
+        result = polynomial(coefficients = [self.coefficients[0].__class__(0)])#[0]) # BUG !!! this should be polynomial(self.coefficients[0].__class__(0)), but the change triggers a bug in exponent table generation
         while i < length: 
             fieldElement = other.coefficients[i]
             temp = polynomial(self.coefficients)
             temp.lift(length - 1 - i)
             temp = temp.timesScalar(fieldElement)    
+            result = result.plus(temp)
+            i = i + 1
+        return result
+
+    def polynomialMultiplication(self, other):
+        i = 0
+        length = len(other.coefficients)
+        result = polynomial(coefficients = [self.coefficients[0].__class__(0)]) # BUG !!! this should be polynomial(self.coefficients[0].__class__(0)), but the change triggers a bug in exponent table generation
+        result.printValues()
+        while i < length: 
+            fieldElement = other.coefficients[i]
+            temp = polynomial(self.coefficients)
+            temp.lift(length - 1 - i)
+            temp = temp.timesScalar(fieldElement)    
+            #result.printValues()
             result = result.plus(temp)
             i = i + 1
         return result
@@ -300,6 +317,16 @@ class gf128(polynomial):
     
     pathToInverseTable = reedSolomonProjectDir + "/gf128Inverse.npy"
     inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()
+    generatorPolynomial = polynomial([1,0,0,0,1,0,0,1])
+    #x^7 + x^1 + 1 = [1,0,0,0,0,0,1,1]
+    #x^7 + x^3 + 1 = [1,0,0,0,1,0,0,1]
+    #x^7 + x^3 + x^2 + x^1 + 1 = [1,0,0,0,1,1,1,1]
+    #x^7 + x^4 + x^3 + x^2 + 1 = [1,0,0,1,1,1,0,1]
+    #x^7 + x^5 + x^4 + x^3 + x^2 + x^1 + 1 = [1,0,1,1,1,1,1,1]
+    #x^7 + x^6 + x^3 + x^1 + 1 = [1,1,0,0,1,0,1,1]
+    #x^7 + x^6 + x^4 + x^2 + 1 = [1,1,0,1,0,1,0,1]
+    #x^7 + x^6 + x^5 + x^2 + 1 = [1,1,1,0,0,1,0,1]
+    #x^7 + x^6 + x^5 + x^4 + x^2 + x^1 + 1 = [1,1,1,1,0,1,1,1]
     
     def __init__(self, value):
         if hasattr(value, '__len__'):
@@ -309,8 +336,6 @@ class gf128(polynomial):
                 print("Class of provided value is " + str(value.__class__))
                 raise("An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients. ")
         elif np.isscalar(value) and (value == 0 or value == 1):
-            #print("debugging value issue")
-            #print(value)
             coefficients = np.zeros(7, IEEE_BINARY_DTYPE)
             coefficients[-1] = value
             super().__init__(coefficients = coefficients)
@@ -318,11 +343,9 @@ class gf128(polynomial):
             raise("Class of provided value is " + str(value.__class__) + "An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients.")
     
     def mul(self, other):
-        #print("Inside mul")
-        #print(other.__class__)
         tempResult = self.times(other)
-        tempResult = tempResult.modulu(polynomial([1,0,0,0,1,0,0,1]))
-        #print(tempResult.coefficients)
+        # Omer Sella: note that there was a choice of polynomila here, namely: p(x) = x^7 + x^3 + 1
+        tempResult = tempResult.modulu(self.generatorPolynomial)#polynomial([1,0,0,0,1,0,0,1]))
         result = gf128(value = tempResult.coefficients)
         return result
         
@@ -393,7 +416,9 @@ def generateExponentAndLogTables():
         #print(i)
         b = b * a
         #print(b.coefficients)
-        b = b.modulu(polynomial([1,0,0,0,1,0,0,1]))
+        #b = b.modulu(polynomial([1,0,0,0,1,0,0,1]))
+        
+        #b= b.modulu(b.generatorPolynomial)
         f = []
         stringF = '' 
         for e in b.coefficients:

@@ -23,6 +23,7 @@ def syndromeCalculator(exponentDictionary, numberOfPowers, receivedBinaryX):
     return syndromes
 
 
+
 def bchDecoder(receivedBinaryVecotor, exponentDictionary, numberOfPowers, codewordLengthMaximal):
     correctionVector = np.zeros(codewordLengthMaximal, dtype = np.int32)
     receivedBinaryX = polynomialClass(coefficients = list(map(gf128, receivedBinaryVecotor))) #list(map(gf128, receivedBinaryVecotor[::-1])))
