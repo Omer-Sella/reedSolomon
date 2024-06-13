@@ -451,7 +451,18 @@ class gf256(polynomial):
     
     #pathToInverseTable = reedSolomonProjectDir + "/gf256Inverse.npy"
     #inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()
+    # Irreducible polynomials from https://www.partow.net/programming/polynomials/index.html#deg08
+    #x^8 + x^4 + x^3 + x^2 + 1
+    #x^8 + x^5 + x^3 + x^1 + 1
+    #x^8 + x^6 + x^4 + x^3 + x^2 + x^1 + 1
+    #x^8 + x^6 + x^5 + x^1 + 1
+    #x^8 + x^6 + x^5 + x^2 + 1
+    #x^8 + x^6 + x^5 + x^3 + 1
+    #x^8 + x^7 + x^6 + x^1 + 1
+    #x^8 + x^7 + x^6 + x^5 + x^2 + x^1 + 1
     
+    #In 177-1 it seems like they used the polynomial x^8 + x^7 + 0 + x^5 + x^4 + 0 + 0 + x + 1 which I'm not sure is irreducible / primitive 
+    generatorPolynomial = polynomial(coefficients = [1,1,0,1,1,0,0,1,1])
     def __init__(self, value):
         if hasattr(value, '__len__'):
             if len(value) == 8:
@@ -472,7 +483,7 @@ class gf256(polynomial):
         #print("Inside mul")
         #print(other.__class__)
         tempResult = self.times(other)
-        tempResult = tempResult.modulu(polynomial([1,0,0,0,1,1,1,0,1])) #x^8 + x^4 + x^3 + x^2 + 1 from Todd K. Moon page 243, example 6.9
+        tempResult = tempResult.modulu(self.generatorPolynomial)#polynomial(coefficients = [1,0,0,0,1,1,1,0,1])) #x^8 + x^4 + x^3 + x^2 + 1 from Todd K. Moon page 243, example 6.9
         #print(tempResult.coefficients)
         result = self.__class__(value = tempResult.coefficients)
         return result
