@@ -187,3 +187,5 @@ def test_connection_polynomial_for_four_errors_explicit_calculation_gf128():
         for e in errorLocations:
             encodedZeroData[e] = 0
             
+if __name__ == "__main__":
+    test_bchDecoder_single_bit_flip()
