@@ -260,14 +260,17 @@ class polynomial():
         # Initialize result as the zero of galois field  of the same class as evaluationPoint 
         result = evaluationPoint.__class__(0)
         if hasattr(evaluationPoint, 'logTable'):
-            logEvaluationPoint = evaluationPoint.getLog()
-            exponentArray = (np.arange(len(self.coefficients), -1 , -1) * logEvaluationPoint) % len(evaluationPoint.exponentTable)
-            #print(exponentArray)
-            # I could have vectorized the addition and multiplication but let's see if the log and exponent alone are enoughj
-            #elementWiseMultiply = np.array([evaluationPoint.__class__(evaluationPoint.exponentTable[i]) * self.coefficients[i] for i in range(len(self.coefficients))])
-            for i in range(len(self.coefficients)):
-                result = result + (evaluationPoint.__class__(evaluationPoint.exponentTable[exponentArray[i]]) * self.coefficients[i])
-            
+            if evaluationPoint == 0:
+                result = copy.deepcopy(self.coefficients[-1])
+            else:
+                logEvaluationPoint = evaluationPoint.getLog()
+                exponentArray = (np.arange(len(self.coefficients), -1 , -1) * logEvaluationPoint) % len(evaluationPoint.exponentTable)
+                #print(exponentArray)
+                # I could have vectorized the addition and multiplication but let's see if the log and exponent alone are enoughj
+                #elementWiseMultiply = np.array([evaluationPoint.__class__(evaluationPoint.exponentTable[i]) * self.coefficients[i] for i in range(len(self.coefficients))])
+                for i in range(len(self.coefficients)):
+                    result = result + (evaluationPoint.__class__(evaluationPoint.exponentTable[exponentArray[i]]) * self.coefficients[i])
+                
         else: 
             # Use the brute force method
             
@@ -275,7 +278,7 @@ class polynomial():
             powerOfEvaluationPoint = evaluationPoint.__class__(1)
             # Polynomials are leading coefficient at index 0
             for i in range(len(self.coefficients)):    
-                result = result + (self.coefficients[len(self.coefficients) - 1 - i] * powerOfEvaluationPoint)
+                result = result + (self.getCoefficient(i) * powerOfEvaluationPoint)
                 powerOfEvaluationPoint = powerOfEvaluationPoint * evaluationPoint
         return result
     

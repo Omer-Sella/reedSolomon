@@ -18,7 +18,8 @@ def syndromeCalculator(exponentDictionary, numberOfPowers, receivedBinaryX):
     syndromes = []
     for i in range(numberOfPowers):
         # exponent table starts with gf(1) at index 0 (!), but s0 is receivedBinaryX(\alpha) !
-        newSyndrome = receivedBinaryX.at(gf128(exponentDictionary[1 + i])) 
+        #newSyndrome = receivedBinaryX.at(gf128(exponentDictionary[1 + i])) 
+        newSyndrome = receivedBinaryX.at(gf128(exponentDictionary[1+ i]))
         syndromes.append(newSyndrome)
     return syndromes
 
