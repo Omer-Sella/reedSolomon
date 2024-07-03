@@ -261,7 +261,7 @@ class polynomial():
         result = evaluationPoint.__class__(0)
         if hasattr(evaluationPoint, 'logTable'):
             logEvaluationPoint = evaluationPoint.getLog()
-            exponentArray = (np.arange(0, len(self.coefficients) , 1) * logEvaluationPoint) % len(evaluationPoint.exponentTable)
+            exponentArray = (np.arange(len(self.coefficients), -1 , -1) * logEvaluationPoint) % len(evaluationPoint.exponentTable)
             #print(exponentArray)
             # I could have vectorized the addition and multiplication but let's see if the log and exponent alone are enoughj
             #elementWiseMultiply = np.array([evaluationPoint.__class__(evaluationPoint.exponentTable[i]) * self.coefficients[i] for i in range(len(self.coefficients))])
@@ -273,18 +273,9 @@ class polynomial():
             
             # Initialize the helper gfElement to be the 1 of galois field  of the same class as evaluationPoint 
             powerOfEvaluationPoint = evaluationPoint.__class__(1)
-            
-            #powersVector = np.array([evaluationPoint ** i for i in range(len(self.coefficients))])
             # Polynomials are leading coefficient at index 0
-            #powersVector = powersVector[::-1]
-            # I'm assuming that if element-wise multiplication is defined, then so is array-array element-wise, but actually I need a ufunc here
-            
             for i in range(len(self.coefficients)):    
-                temp = self.coefficients[i]
-                #temp = temp * gfElement # Note the change - instead of casting temp into the same type as the evaluation point, we assume they are of the same type !
-                #temp = (evaluationPoint.__class__(temp)).mul(gfElement)
-                temp = temp * powerOfEvaluationPoint
-                result = result + temp
+                result = result + (self.coefficients[len(self.coefficients) - 1 - i] * powerOfEvaluationPoint)
                 powerOfEvaluationPoint = powerOfEvaluationPoint * evaluationPoint
         return result
     

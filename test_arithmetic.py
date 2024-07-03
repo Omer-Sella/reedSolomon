@@ -211,6 +211,18 @@ def test_exponentiation():
         d = gf128(a.exponentTable[(i * b.getLog()) % len(a.exponentTable)])
         assert d == c
     
-
-        
+def test_polynomialRealNumbers():
+    a = polynomial(coefficients = [1,0,-1]) # x^2 - 1 
+    c = a.at(1)
+    assert c == 0
+    c = a.at(-1)
+    assert c == 0
     
+def test_polynomialCatchAlignmentBug():
+    a = polynomial(coefficients = [1,0,0]) # x^2
+    assert(a.at(2) == 4)
+    assert(a.at(3) == 9)
+    
+def test_polynomialCatchAlignmentBugOverGF128():
+    a = polynomial(coefficients = [gf128([0,0,0,0,0,0,1]), gf128([0,0,0,0,0,1,0])]) #x + \alpha
+    assert(a.at(gf128([0,0,0,0,0,1,0])) == gf128(0))

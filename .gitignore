@@ -1,3 +1,5 @@
 __pycache__
 *TestResults*
 .vs
+./env*
+.pytest_cache
