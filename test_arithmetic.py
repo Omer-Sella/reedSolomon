@@ -195,3 +195,22 @@ def test_chienSearch():
     p3X = polynomial(coefficients = list(map(gf128,np.array([1,1]))))
     assert (gX == p1X * p2X * p3X * p3X)
     
+def test_logExponentRoundtrip():
+    a = gf128(1)
+    for i in a.exponentTable.keys():
+        c = gf128(a.exponentTable[i])
+        assert (c.getLog() == i)
+
+
+def test_exponentiation():
+    a = gf128(1)
+    b = gf128([0,0,0,0,0,1,0])
+    c = gf128([0,0,0,0,0,1,0])
+    for i in range(2, 140, 1):
+        c = c * b    
+        d = gf128(a.exponentTable[(i * b.getLog()) % len(a.exponentTable)])
+        assert d == c
+    
+
+        
+    

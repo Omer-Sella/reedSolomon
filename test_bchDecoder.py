@@ -32,8 +32,6 @@ def test_bchDecoder_single_bit_flip():
                                                                       exponentDictionary = eD, 
                                                                       numberOfPowers = 16, 
                                                                       codewordLengthMaximal = 127)
-        #errorLocatorX.printValues()
-        #print(np.where(correctionVector == 1))
         # Error found in location i
         assert correctionVector[i] == 1 
         # Only one error was found
@@ -181,7 +179,7 @@ def test_connection_polynomial_for_four_errors_explicit_calculation_gf128():
         lambda1 = s[0]
         lambda2 = (s[0] * (s[6] + s[0]*s[0]*s[0]*s[0]*s[0]*s[0]*s[0]) + s[2] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4])) / (s[2] * (s[0]*s[0]*s[0] + s[2]) + s[0] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4]))
         lambda3 = s[0]*s[0]*s[0] + s[2] + s[0] * lambda2
-        lambda4 =  (s[4] + s[0]*s[0]*s[2] + lambda2 * (s[0]*s[0]*s[0] + s[2])) / s[0]
+        lambda4 =  (s[4] + s[0]*s[0]*s[2] + (lambda2 * (s[0]*s[0]*s[0] + s[2]))) / s[0]
         explicitConnectionX = polynomialClass(coefficients = [lambda4, lambda3, lambda2, lambda1, gfOne])
         assert explicitConnectionX == eX
         for e in errorLocations:

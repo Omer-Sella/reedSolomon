@@ -258,17 +258,34 @@ class polynomial():
     def at(self, evaluationPoint):
         # No safety ! The multiplication between the evaluation point and the coefficients needs to make sense.
         # Initialize result as the zero of galois field  of the same class as evaluationPoint 
-        
         result = evaluationPoint.__class__(0)
-        # Initialize the helper gfElement to be the 1 of galois field  of the same class as evaluationPoint 
-        powerOfEvaluationPoint = evaluationPoint.__class__(1)
-        for i in range(len(self.coefficients)):
-            temp = self.coefficients[i]
-            #temp = temp * gfElement # Note the change - instead of casting temp into the same type as the evaluation point, we assume they are of the same type !
-            #temp = (evaluationPoint.__class__(temp)).mul(gfElement)
-            temp = temp * powerOfEvaluationPoint
-            result = result + temp# * powerOfEvaluationPoint #.plus(temp)
-            powerOfEvaluationPoint = powerOfEvaluationPoint * evaluationPoint
+        if hasattr(evaluationPoint, 'logTable'):
+            logEvaluationPoint = evaluationPoint.getLog()
+            exponentArray = (np.arange(0, len(self.coefficients) , 1) * logEvaluationPoint) % len(evaluationPoint.exponentTable)
+            #print(exponentArray)
+            # I could have vectorized the addition and multiplication but let's see if the log and exponent alone are enoughj
+            #elementWiseMultiply = np.array([evaluationPoint.__class__(evaluationPoint.exponentTable[i]) * self.coefficients[i] for i in range(len(self.coefficients))])
+            for i in range(len(self.coefficients)):
+                result = result + (evaluationPoint.__class__(evaluationPoint.exponentTable[exponentArray[i]]) * self.coefficients[i])
+            
+        else: 
+            # Use the brute force method
+            
+            # Initialize the helper gfElement to be the 1 of galois field  of the same class as evaluationPoint 
+            powerOfEvaluationPoint = evaluationPoint.__class__(1)
+            
+            #powersVector = np.array([evaluationPoint ** i for i in range(len(self.coefficients))])
+            # Polynomials are leading coefficient at index 0
+            #powersVector = powersVector[::-1]
+            # I'm assuming that if element-wise multiplication is defined, then so is array-array element-wise, but actually I need a ufunc here
+            
+            for i in range(len(self.coefficients)):    
+                temp = self.coefficients[i]
+                #temp = temp * gfElement # Note the change - instead of casting temp into the same type as the evaluation point, we assume they are of the same type !
+                #temp = (evaluationPoint.__class__(temp)).mul(gfElement)
+                temp = temp * powerOfEvaluationPoint
+                result = result + temp
+                powerOfEvaluationPoint = powerOfEvaluationPoint * evaluationPoint
         return result
     
     def getCoefficient(self, index):
@@ -316,7 +333,11 @@ class polynomial():
 class gf128(polynomial):
     
     pathToInverseTable = reedSolomonProjectDir + "/gf128Inverse.npy"
+    pathToExponentTable = reedSolomonProjectDir + "/gf128Exponent.npy"
+    pathToLogTable = reedSolomonProjectDir + "/gf128Log.npy"
     inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()
+    exponentTable = np.load(pathToExponentTable, allow_pickle = True).item()
+    logTable = np.load(pathToLogTable, allow_pickle = True).item()
     generatorPolynomial = polynomial([1,0,0,0,1,0,0,1])
     #x^7 + x^1 + 1 = [1,0,0,0,0,0,1,1]
     #x^7 + x^3 + 1 = [1,0,0,0,1,0,0,1]
@@ -327,6 +348,7 @@ class gf128(polynomial):
     #x^7 + x^6 + x^4 + x^2 + 1 = [1,1,0,1,0,1,0,1]
     #x^7 + x^6 + x^5 + x^2 + 1 = [1,1,1,0,0,1,0,1]
     #x^7 + x^6 + x^5 + x^4 + x^2 + x^1 + 1 = [1,1,1,1,0,1,1,1]
+    
     
     def __init__(self, value):
         if hasattr(value, '__len__'):
@@ -398,6 +420,14 @@ class gf128(polynomial):
      
     def __ne__(self, other):
         return (not (self == other))
+    
+    def getLog(self):
+        if self == 0 :
+            raise ValueError('Log is not defined for 0')
+        else:
+            key = ''.join(map(str, self.coefficients))
+        return self.logTable[key]
+
 
 def generateExponentAndLogTables():
     exponentTable={}
@@ -411,6 +441,7 @@ def generateExponentAndLogTables():
         stringF = stringF + str(e)
     exponentTable[0] = [0,0,0,0,0,0,1]
     exponentTable[1] = f
+    logarithmTable['0000001'] = 0
     logarithmTable[stringF] = 1
     for i in range(2,127,1):
         #print(i)
