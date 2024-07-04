@@ -199,7 +199,7 @@ def test_logExponentRoundtrip():
     a = gf128(1)
     for i in a.exponentTable.keys():
         c = gf128(a.exponentTable[i])
-        assert (c.getLog() == i)
+        assert (c.getLog() == i )
 
 
 def test_exponentiation():
@@ -208,7 +208,7 @@ def test_exponentiation():
     c = gf128([0,0,0,0,0,1,0])
     for i in range(2, 140, 1):
         c = c * b    
-        d = gf128(a.exponentTable[(i * b.getLog()) % len(a.exponentTable)])
+        d = gf128(a.exponentTable[(i * b.getLog()) % len(a.logTable)])
         assert d == c
     
 def test_polynomialRealNumbers():

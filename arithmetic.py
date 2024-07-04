@@ -427,25 +427,21 @@ def generateExponentAndLogTables():
     exponentTable={}
     logarithmTable={}
     a = gf128([0,0,0,0,0,1,0])
-    b = gf128([0,0,0,0,0,1,0])
+    b = gf128([0,0,0,0,0,0,1])
+    
     f = []
     stringF = '' 
-    for e in b.coefficients:
+    for e in a.coefficients:
         f.append(e)
         stringF = stringF + str(e)
     exponentTable[0] = [0,0,0,0,0,0,1]
-    exponentTable[1] = f
+    #exponentTable[1] = f
     logarithmTable['0000001'] = 0
     logarithmTable[stringF] = 1
-    for i in range(2,127,1):
-        #print(i)
+    for i in range(1,127,1):
         b = b * a
-        #print(b.coefficients)
-        #b = b.modulu(polynomial([1,0,0,0,1,0,0,1]))
-        
-        #b= b.modulu(b.generatorPolynomial)
         f = []
-        stringF = '' 
+        stringF = ''
         for e in b.coefficients:
             f.append(e)
             stringF = stringF + str(e)
