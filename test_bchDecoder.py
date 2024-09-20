@@ -116,6 +116,9 @@ def test_connection_polynomial_for_two_errors_explicit_calculation_gf128():
         lambda1 = syndromes[0]
         lambda2 = (syndromes[2] + (syndromes[0] * syndromes[0] * syndromes[0])) / syndromes[0]
         explicitConnectionX = polynomialClass(coefficients = [lambda2, lambda1, gfOne])
+
+        # eX.printValues()
+        # explicitConnectionX.printValues()
         assert explicitConnectionX == eX
         encodedZeroData[pair[0]] = 0
         encodedZeroData[pair[1]] = 0
@@ -139,7 +142,7 @@ def test_connection_polynomial_for_three_errors_explicit_calculation_gf128():
         syndromes = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         gfOne = gf128(1)
         lambda1 = syndromes[0]
-        lambda2 = ((syndromes[1] * syndromes[1]) 
+        lambda2 = ((syndromes[0] * syndromes[0]) 
                    * syndromes[2] 
                    + syndromes[4]) / ((syndromes[0] * 
                                        syndromes[0] * 
@@ -148,12 +151,13 @@ def test_connection_polynomial_for_three_errors_explicit_calculation_gf128():
         lambda3 = ((syndromes[0] * 
                             syndromes[0] * 
                             syndromes[0]) + 
-                            syndromes[2]) + syndromes[2] * lambda2
+                            syndromes[2]) + syndromes[0] * lambda2
         explicitConnectionX = polynomialClass(coefficients = [lambda3, lambda2, lambda1, gfOne])
         if eX != explicitConnectionX:
             eX.printValues()
             explicitConnectionX.printValues()
         assert explicitConnectionX == eX
+        # Undo bit flipping for next test
         for e in errorLocations:
             encodedZeroData[e] = 0
         
@@ -179,12 +183,52 @@ def test_connection_polynomial_for_four_errors_explicit_calculation_gf128():
         lambda1 = s[0]
         lambda2 = (s[0] * (s[6] + s[0]*s[0]*s[0]*s[0]*s[0]*s[0]*s[0]) + s[2] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4])) / (s[2] * (s[0]*s[0]*s[0] + s[2]) + s[0] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4]))
         lambda3 = s[0]*s[0]*s[0] + s[2] + s[0] * lambda2
-        lambda4 =  (s[4] + s[0]*s[0]*s[2] + (lambda2 * (s[0]*s[0]*s[0] + s[2]))) / s[0]
+        #BUG ! When calculating lambda4 the element returned was not a binary polynomial !!!
+        # Need to understand why, fix it, and add test in test_arithmetic
+        lambda4 =  (s[4] + s[0]*s[0]*s[2] + ( (s[0]*s[0]*s[0] + s[2]) * lambda2)) / s[0]
+        
         explicitConnectionX = polynomialClass(coefficients = [lambda4, lambda3, lambda2, lambda1, gfOne])
+        if explicitConnectionX != eX:
+            print(e)
+            [e.printValues() for e in s]
+            eX.printValues()
+            explicitConnectionX.printValues()
         assert explicitConnectionX == eX
         for e in errorLocations:
             encodedZeroData[e] = 0
-            
+
+def debugHelper():
+    from bchDecoder import syndromeCalculator
+    eD, _ =  generateExponentAndLogTables()
+    encodedZeroData = np.zeros(126)
+    #testCombinations = np.random.choice(list(combinations(range(126),4)), 20)
+    testCombinations = [(6,7, 100,123)]#[ (0,7, 51,110), (1,7, 52,111), (2,7, 53,112), (3,7, 54,120), (4,7, 55,121), (5,7, 56,122), (6,7, 100,123),  (10,7, 101,124), (11,7, 102,125)]
+    for errorLocations in testCombinations:
+        for e in errorLocations:
+            encodedZeroData[e] = 1
+        # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
+        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        receivedBinaryAsPolynomial = polynomialClass(coefficients = list(map(gf128, encodedZeroData)))
+        s = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
+        gfOne = gf128(1)
+        lambda1 = s[0]
+        lambda2 = (s[0] * (s[6] + s[0]*s[0]*s[0]*s[0]*s[0]*s[0]*s[0]) + s[2] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4])) / (s[2] * (s[0]*s[0]*s[0] + s[2]) + s[0] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4]))
+        lambda3 = s[0]*s[0]*s[0] + s[2] + s[0] * lambda2
+        #BUG ! When calculating lambda4 the element returned was not a binary polynomial !!!
+        # Need to understand why, fix it, and add test in test_arithmetic
+        lambda4 =  (s[4] + s[0]*s[0]*s[2] + ( (s[0]*s[0]*s[0] + s[2]) * lambda2)) / s[0]
+        
+        explicitConnectionX = polynomialClass(coefficients = [lambda4, lambda3, lambda2, lambda1, gfOne])
+        if explicitConnectionX != eX:
+            print(e)
+            [e.printValues() for e in s]
+            eX.printValues()
+            explicitConnectionX.printValues()
+    return s, lambda2
+    
 if __name__ == "__main__":
     #test_bchDecoder_single_bit_flip()
-    pass
+    #test_connection_polynomial_for_two_errors_explicit_calculation_gf128()
+    #test_connection_polynomial_for_three_errors_explicit_calculation_gf128()
+    #test_connection_polynomial_for_four_errors_explicit_calculation_gf128()
+    s, l2 = debugHelper()

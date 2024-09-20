@@ -185,8 +185,6 @@ class polynomial():
     def times(self, other):
         i = 0
         length = len(other.coefficients)
-        #print(self.coefficients[0].__class__)
-        #print(other.coefficients[0].__class__)
         result = polynomial(coefficients = [self.coefficients[0].__class__(0)])#[0]) # BUG !!! this should be polynomial(self.coefficients[0].__class__(0)), but the change triggers a bug in exponent table generation
         while i < length: 
             fieldElement = other.coefficients[i]
@@ -201,13 +199,11 @@ class polynomial():
         i = 0
         length = len(other.coefficients)
         result = polynomial(coefficients = [self.coefficients[0].__class__(0)]) # BUG !!! this should be polynomial(self.coefficients[0].__class__(0)), but the change triggers a bug in exponent table generation
-        result.printValues()
         while i < length: 
             fieldElement = other.coefficients[i]
             temp = polynomial(self.coefficients)
             temp.lift(length - 1 - i)
             temp = temp.timesScalar(fieldElement)    
-            #result.printValues()
             result = result.plus(temp)
             i = i + 1
         return result
@@ -250,8 +246,6 @@ class polynomial():
             remainder = remainder + temp # Note + rather than -, all over a binary field
             if np.isscalar(self.coefficients[0]):
                 remainder.coefficients = remainder.coefficients %2
-            #print("And the new remainder is:")
-            #remainder.printValues()
         remainder = polynomial(remainder.coefficients[-len(divisor.coefficients) + 1 : ])
         return remainder
     
@@ -265,7 +259,6 @@ class polynomial():
             else:
                 logEvaluationPoint = evaluationPoint.getLog()
                 exponentArray = (np.arange(len(self.coefficients), -1 , -1) * logEvaluationPoint) % len(evaluationPoint.exponentTable)
-                #print(exponentArray)
                 # I could have vectorized the addition and multiplication but let's see if the log and exponent alone are enoughj
                 #elementWiseMultiply = np.array([evaluationPoint.__class__(evaluationPoint.exponentTable[i]) * self.coefficients[i] for i in range(len(self.coefficients))])
                 for i in range(len(self.coefficients)):
@@ -325,6 +318,9 @@ class polynomial():
         print(string)
             
 class gf128(polynomial):
+    """
+    Ad-hoc implementation of gf128 arithmetic, since this arithmetic class has several possible specific optimizations 
+    """
     
     pathToInverseTable = reedSolomonProjectDir + "/gf128Inverse.npy"
     pathToExponentTable = reedSolomonProjectDir + "/gf128Exponent.npy"
@@ -360,6 +356,7 @@ class gf128(polynomial):
     
     def mul(self, other):
         tempResult = self.times(other)
+        tempResult.coefficients = tempResult.coefficients %2
         # Omer Sella: note that there was a choice of polynomila here, namely: p(x) = x^7 + x^3 + 1
         tempResult = tempResult.modulu(self.generatorPolynomial)#polynomial([1,0,0,0,1,0,0,1]))
         result = gf128(value = tempResult.coefficients)
@@ -469,7 +466,9 @@ def generateInverseTable():
 
 
 class gf256(polynomial):
-    
+    """
+    This is a step towards a generic gf(M) implementation
+    """
     #pathToInverseTable = reedSolomonProjectDir + "/gf256Inverse.npy"
     #inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()
     # Irreducible polynomials from https://www.partow.net/programming/polynomials/index.html#deg08
@@ -492,8 +491,6 @@ class gf256(polynomial):
                 print("Class of provided value is " + str(value.__class__))
                 raise("An element in GF(256) is a 8-tuple of binary values. Please avoid ambiguity by stating all 8 coefficients. ")
         elif np.isscalar(value) and (value == 0 or value == 1):
-            #print("debugging value issue")
-            #print(value)
             coefficients = np.zeros(8, IEEE_BINARY_DTYPE)
             coefficients[-1] = value
             super().__init__(coefficients = coefficients)
@@ -501,11 +498,9 @@ class gf256(polynomial):
             raise("Class of provided value is " + str(value.__class__) + "An element in GF(256) is a 8-tuple of binary values. Please avoid ambiguity by stating all 8 coefficients.")
     
     def mul(self, other):
-        #print("Inside mul")
-        #print(other.__class__)
+        
         tempResult = self.times(other)
         tempResult = tempResult.modulu(self.generatorPolynomial)#polynomial(coefficients = [1,0,0,0,1,1,1,0,1])) #x^8 + x^4 + x^3 + x^2 + 1 from Todd K. Moon page 243, example 6.9
-        #print(tempResult.coefficients)
         result = self.__class__(value = tempResult.coefficients)
         return result
         

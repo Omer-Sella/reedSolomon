@@ -226,3 +226,20 @@ def test_polynomialCatchAlignmentBug():
 def test_polynomialCatchAlignmentBugOverGF128():
     a = polynomial(coefficients = [gf128([0,0,0,0,0,0,1]), gf128([0,0,0,0,0,1,0])]) #x + \alpha
     assert(a.at(gf128([0,0,0,0,0,1,0])) == gf128(0))
+    
+def test_reproduceDivisionBug():
+    # After investigation, it actually turns out this is a multiplication bug rather than division (multiplication test added).
+    aux = gf128([0, 0, 0, 1, 0, 0, 1])
+    denominator = gf128([1, 0, 0, 1, 1, 0, 1])
+    bug = aux / denominator
+    for c in bug.coefficients:
+        assert ((c == 0) or (c==1))
+
+def test_reproduceMultiplicationBug():
+    aux1 = gf128([0, 0, 0, 1, 0, 0, 1])
+    bug = aux1*aux1
+    for c in bug.coefficients:
+        assert ((c == 0) or (c==1))
+
+
+    
