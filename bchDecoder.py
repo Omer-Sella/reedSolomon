@@ -59,7 +59,6 @@ def bchDecoder(receivedBinaryVecotor, gfType, exponentDictionary, numberOfPowers
                 omegaX = forneyCalculator(polynomial(syndromes), errorLocatorX, numberOfPowers / 2)
                 correctionVector[i - 1] = (omegaX.at(exponentDictionary[i % (len(exponentDictionary))])) / (errorLocatorX.d().at(exponentDictionary[i % (len(exponentDictionary))]))
     correctedVector = (receivedBinaryVecotor + correctionVector[0 : len(receivedBinaryVecotor)]) %2
-    #return correctedVector, correctionVector
     return correctedVector, correctionVector, errorLocatorX #For debug, communicate the error locator as well
             
             

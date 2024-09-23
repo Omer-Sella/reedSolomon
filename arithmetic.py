@@ -423,22 +423,24 @@ class gf128(polynomial):
         return self.logTable[key]
 
 
-def generateExponentAndLogTables():
+def generateExponentAndLogTables(gfType = gf128, generatorAsList = [0,0,0,0,0,1,0]):
     exponentTable={}
     logarithmTable={}
-    a = gf128([0,0,0,0,0,1,0])
-    b = gf128([0,0,0,0,0,0,1])
-    
+    a = gfType(generatorAsList) #gf128([0,0,0,0,0,1,0])
+    wanAsList = [0] * len(generatorAsList)
+    wanAsList[len(wanAsList) - 1] = 1
+    b = gfType(wanAsList) #gf128([0,0,0,0,0,0,1])
+    wanAsString = "".join([str(e) for e in wanAsList])
     f = []
     stringF = '' 
     for e in a.coefficients:
         f.append(e)
         stringF = stringF + str(e)
-    exponentTable[0] = [0,0,0,0,0,0,1]
+    exponentTable[0] = wanAsList #[0,0,0,0,0,0,1]
     #exponentTable[1] = f
-    logarithmTable['0000001'] = 0
+    logarithmTable[wanAsString] = 0
     logarithmTable[stringF] = 1
-    for i in range(1,127,1):
+    for i in range(1, (2 ** len(generatorAsList)) - 1, 1):
         b = b * a
         f = []
         stringF = ''
@@ -449,20 +451,22 @@ def generateExponentAndLogTables():
         logarithmTable[stringF] = i
     return exponentTable, logarithmTable
 
-def generateInverseTable():
-    # A pretty lazy implementation of finding an inverse, we're only using this once so why bother.
+def generateInverseTable(gfType = gf128, generatorAsList = [0,0,0,0,0,1,0]):
+    # A pretty lazy implementation of finding an inverse, we're only using this once in a lifetime, so simple and readable.
     inverseDictionary = {}
-    a = gf128([0,0,0,0,0,0,1])
-    temp = gf128([0,0,0,0,0,0,1])
+    wanAsList = [0] * len(generatorAsList)
+    wanAsList[len(wanAsList) - 1] = 1
+    a = gfType(wanAsList) #gf128([0,0,0,0,0,0,1])
+    temp = gfType(wanAsList) #gf128([0,0,0,0,0,0,1])
     key = str(a.getValue())
-    b = gf128([0,0,0,0,0,1,0])
-    one = gf128([0,0,0,0,0,0,1])
+    b = gfType(generatorAsList) #gf128([0,0,0,0,0,1,0])
+    ONE = gfType(wanAsList) #gf128([0,0,0,0,0,0,1])
     inverseDictionary[key] = temp.getValue()
-    for i in range(1,127,1):
+    for i in range(1,(2 ** len(generatorAsList) ) - 1, 1):
         a = a * b
         key = str(a.getValue())
-        temp = gf128([0,0,0,0,0,1,0])
-        while temp * a != one:
+        temp = gfType(wanAsList)# gf128([0,0,0,0,0,1,0])
+        while temp * a != ONE:
             temp = temp * b
         inverseDictionary[key] = temp.getValue()
     return inverseDictionary
@@ -472,8 +476,12 @@ class gf256(polynomial):
     """
     This is a step towards a generic gf(M) implementation
     """
-    #pathToInverseTable = reedSolomonProjectDir + "/gf256Inverse.npy"
-    #inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()
+    pathToInverseTable = reedSolomonProjectDir + "/gf256Inverse.npy"
+    pathToLogTable = reedSolomonProjectDir + "/gf256Log.npy"
+    pathToExponentTable = reedSolomonProjectDir + "/gf256Exponent.npy"
+    inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()  
+    exponentTable = np.load(pathToExponentTable, allow_pickle = True).item()
+    logTable = np.load(pathToLogTable, allow_pickle = True).item()
     # Irreducible polynomials from https://www.partow.net/programming/polynomials/index.html#deg08
     #x^8 + x^4 + x^3 + x^2 + 1
     #x^8 + x^5 + x^3 + x^1 + 1
@@ -556,3 +564,4 @@ class gf256(polynomial):
      
     def __ne__(self, other):
         return (not (self == other))
+    
