@@ -10,8 +10,7 @@ if reedSolomonProjectDir == None:
      reedSolomonProjectDir = "c:/users/omer/reedSolomon/reedSolomon/"
 sys.path.insert(0, reedSolomonProjectDir)
 from arithmetic import binaryFieldElement as galoisElement
-from arithmetic import polynomial as polynomialClass
-from arithmetic import generateExponentAndLogTables, gf128, generateExponentAndLogTables
+from arithmetic import generateExponentAndLogTables, gf128, generateExponentAndLogTables, polynomial
 from bchDecoder import bchDecoder
 import numpy as np
 
@@ -20,7 +19,7 @@ def test_bchDecoder():
     encodedZeroData = np.zeros(126)
     eD, _ =  generateExponentAndLogTables()
     #print("Done generating log and exp dictionaries.")
-    correctedVector, correctionVector, errorLocatorX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+    correctedVector, correctionVector, errorLocatorX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
     assert (np.all(correctedVector == 0))
     
 def test_bchDecoder_single_bit_flip():
@@ -29,6 +28,7 @@ def test_bchDecoder_single_bit_flip():
     for i in range(len(encodedZeroData)):
         encodedZeroData[i] = 1
         correctedVector, correctionVector, errorLocatorX = bchDecoder( receivedBinaryVecotor = encodedZeroData, 
+                                                                      gfType = gf128,
                                                                       exponentDictionary = eD, 
                                                                       numberOfPowers = 16, 
                                                                       codewordLengthMaximal = 127)
@@ -46,7 +46,7 @@ def test_bchDecoder_single_bit_flip_order_check():
     eD, _ =  generateExponentAndLogTables()
     for i in range(len(encodedZeroData)):
         encodedZeroData[i] = 1
-        correctedVector, correctionVector, errorLocatorX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        correctedVector, correctionVector, errorLocatorX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
         assert errorLocatorX.order() == 1
         encodedZeroData[i] = 0
         
@@ -65,8 +65,8 @@ def coverage_bchDecoder_two_bit_flips():
         encodedZeroData[pair[0]] = 1
         encodedZeroData[pair[1]] = 1
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
-        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
-        receivedBinaryAsPolynomial = polynomialClass(coefficients = list(map(gf128, encodedZeroData)))
+        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        receivedBinaryAsPolynomial = polynomial(coefficients = list(map(gf128, encodedZeroData)))
         syndromes = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         # Error found in both locations
         assert correctionVector[pair[0]] == 1 
@@ -86,7 +86,7 @@ def coverage_retrace_bug_error_in_first_coordinate(index):
     eD, _ =  generateExponentAndLogTables()
     encodedZeroData[index] = 1
     # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
-    correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+    correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
     for i in eD.keys():
         print(eX.at(gf128(eD[i])).getValue())
     return correctedVector, correctionVector, eX
@@ -109,13 +109,13 @@ def test_connection_polynomial_for_two_errors_explicit_calculation_gf128():
         encodedZeroData[pair[0]] = 1
         encodedZeroData[pair[1]] = 1
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
-        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
-        receivedBinaryAsPolynomial = polynomialClass(coefficients = list(map(gf128, encodedZeroData)))
+        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        receivedBinaryAsPolynomial = polynomial(coefficients = list(map(gf128, encodedZeroData)))
         syndromes = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         gfOne = gf128(1)
         lambda1 = syndromes[0]
         lambda2 = (syndromes[2] + (syndromes[0] * syndromes[0] * syndromes[0])) / syndromes[0]
-        explicitConnectionX = polynomialClass(coefficients = [lambda2, lambda1, gfOne])
+        explicitConnectionX = polynomial(coefficients = [lambda2, lambda1, gfOne])
 
         # eX.printValues()
         # explicitConnectionX.printValues()
@@ -137,8 +137,8 @@ def test_connection_polynomial_for_three_errors_explicit_calculation_gf128():
         for e in errorLocations:
             encodedZeroData[e] = 1
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
-        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
-        receivedBinaryAsPolynomial = polynomialClass(coefficients = list(map(gf128, encodedZeroData)))
+        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        receivedBinaryAsPolynomial = polynomial(coefficients = list(map(gf128, encodedZeroData)))
         syndromes = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         gfOne = gf128(1)
         lambda1 = syndromes[0]
@@ -152,7 +152,7 @@ def test_connection_polynomial_for_three_errors_explicit_calculation_gf128():
                             syndromes[0] * 
                             syndromes[0]) + 
                             syndromes[2]) + syndromes[0] * lambda2
-        explicitConnectionX = polynomialClass(coefficients = [lambda3, lambda2, lambda1, gfOne])
+        explicitConnectionX = polynomial(coefficients = [lambda3, lambda2, lambda1, gfOne])
         if eX != explicitConnectionX:
             eX.printValues()
             explicitConnectionX.printValues()
@@ -176,18 +176,15 @@ def test_connection_polynomial_for_four_errors_explicit_calculation_gf128():
         for e in errorLocations:
             encodedZeroData[e] = 1
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
-        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
-        receivedBinaryAsPolynomial = polynomialClass(coefficients = list(map(gf128, encodedZeroData)))
+        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        receivedBinaryAsPolynomial = polynomial(coefficients = list(map(gf128, encodedZeroData)))
         s = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         gfOne = gf128(1)
         lambda1 = s[0]
         lambda2 = (s[0] * (s[6] + s[0]*s[0]*s[0]*s[0]*s[0]*s[0]*s[0]) + s[2] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4])) / (s[2] * (s[0]*s[0]*s[0] + s[2]) + s[0] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4]))
         lambda3 = s[0]*s[0]*s[0] + s[2] + s[0] * lambda2
-        #BUG ! When calculating lambda4 the element returned was not a binary polynomial !!!
-        # Need to understand why, fix it, and add test in test_arithmetic
         lambda4 =  (s[4] + s[0]*s[0]*s[2] + ( (s[0]*s[0]*s[0] + s[2]) * lambda2)) / s[0]
-        
-        explicitConnectionX = polynomialClass(coefficients = [lambda4, lambda3, lambda2, lambda1, gfOne])
+        explicitConnectionX = polynomial(coefficients = [lambda4, lambda3, lambda2, lambda1, gfOne])
         if explicitConnectionX != eX:
             print(e)
             [e.printValues() for e in s]
@@ -207,18 +204,19 @@ def debugHelper():
         for e in errorLocations:
             encodedZeroData[e] = 1
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
-        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
-        receivedBinaryAsPolynomial = polynomialClass(coefficients = list(map(gf128, encodedZeroData)))
+        correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
+        receivedBinaryAsPolynomial = polynomial(coefficients = list(map(gf128, encodedZeroData)))
         s = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         gfOne = gf128(1)
         lambda1 = s[0]
-        lambda2 = (s[0] * (s[6] + s[0]*s[0]*s[0]*s[0]*s[0]*s[0]*s[0]) + s[2] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4])) / (s[2] * (s[0]*s[0]*s[0] + s[2]) + s[0] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4]))
-        lambda3 = s[0]*s[0]*s[0] + s[2] + s[0] * lambda2
+        lambda2 = (s[0] * (s[6] + s[0] * s[0] * s[0] * s[0] * s[0] * s[0] * s[0]) + s[2] * 
+                   (s[0] * s[0] * s[0] * s[0] * s[0] + s[4])) / (s[2] * (s[0] * s[0] * s[0] + s[2]) + s[0] * (s[0] * s[0] * s[0] * s[0] * s[0] + s[4]))
+        lambda3 = s[0] * s[0] * s[0] + s[2] + s[0] * lambda2
         #BUG ! When calculating lambda4 the element returned was not a binary polynomial !!!
         # Need to understand why, fix it, and add test in test_arithmetic
-        lambda4 =  (s[4] + s[0]*s[0]*s[2] + ( (s[0]*s[0]*s[0] + s[2]) * lambda2)) / s[0]
+        lambda4 =  (s[4] + s[0]*s[0]*s[2] + ( (s[0] * s[0] * s[0] + s[2]) * lambda2)) / s[0]
         
-        explicitConnectionX = polynomialClass(coefficients = [lambda4, lambda3, lambda2, lambda1, gfOne])
+        explicitConnectionX = polynomial(coefficients = [lambda4, lambda3, lambda2, lambda1, gfOne])
         if explicitConnectionX != eX:
             print(e)
             [e.printValues() for e in s]

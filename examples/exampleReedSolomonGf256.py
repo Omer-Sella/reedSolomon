@@ -26,4 +26,6 @@ for i in range(designedDistance - 1):
     linearFactor = polynomial([wan, beta])
     generatorPolynomial = generatorPolynomial * linearFactor
 
+# Print the coefficients of the generator polynomial
 generatorPolynomial.printValues()
+

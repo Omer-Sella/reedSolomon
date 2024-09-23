@@ -209,8 +209,11 @@ class polynomial():
         return result
 
     def ignoreFromDegree(self, degreeToTruncateFrom):
-        newCoefficients = self.coefficients[0 : (degreeToTruncateFrom + 1)]
-        return polynomial(coefficients = newCoefficients)
+        if (degreeToTruncateFrom + 1) >= len(self.coefficients):
+            newCoefficients = self.coefficients[0 : (degreeToTruncateFrom + 1)]
+            return polynomial(coefficients = newCoefficients)
+        else:
+            return self
         
     def d(self):
         # This only works over GF(2):
