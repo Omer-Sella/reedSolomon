@@ -28,8 +28,8 @@ CODEWORD_LENGTH = (2 ** SYMBOL_LENGTH) - 1
 # Create a generator polynomial for encoding messages, capable of decoding up to designedDistance = 15 erasures
 alpha = gf256([0,0,0,0,0,0,1,0])
 beta = gf256([0,0,0,0,0,0,1,0])
-wan = gf256(1)
-zro = gf256(0)
+wan = gf256([0,0,0,0,0,0,0,1])
+zro = gf256([0,0,0,0,0,0,0,0])
 # Initialize the generator polynomial as (X - alpha)
 generatorPolynomialX = polynomial([wan, alpha])
 for i in range(PARITY_LENGTH):
@@ -42,12 +42,19 @@ generatorPolynomialX.printValues()
 
 # generate some data
 data = localPRNG.randint(0, 2, (CODEWORD_LENGTH - PARITY_LENGTH) * SYMBOL_LENGTH)
-codewordX = polynomial(data).lift(PARITY_LENGTH)
+# parse the binary data into 8-bit-long-symbols and cast into (a list of) gf256 symbols
+dataParsed = [gf256(data[i * 8 : (i + 1) * 8]) for i in range(CODEWORD_LENGTH  - PARITY_LENGTH)]
+# Create a codeword polynomial that contains the data as the coefficients of the higher-than-PARITY_LENGTH powers
+codewordX = polynomial(dataParsed).lift(PARITY_LENGTH)
+codewordX.printValues()
 parityX = codewordX.modulu(generatorPolynomialX)
 codewordX.coefficients[0 : PARITY_LENGTH] = parityX.coefficients
 
 # Test - codewordX modulu generator polynomial should now be 0:
-codewordX.modulu(generatorPolynomialX).printValues()
+generatorPolynomialX.printValues()
+codewordX.printValues()
+modulusX = codewordX.modulu(generatorPolynomialX)
+modulusX.printValues()
 
 
 
