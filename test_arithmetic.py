@@ -4,7 +4,9 @@ Created on Tue Mar 12 12:05:03 2024
 
 @author: Omer
 """
+from email import generator
 from arithmetic import *
+#from symbol import parameters
 
 def test_fieldPlus():
     a = binaryFieldElement(0)
@@ -13,6 +15,7 @@ def test_fieldPlus():
     assert c.value == 1
     c = b.plus(a)
     assert c.value == 1
+    #return 'OK'
     
 
 def test_constructor():
@@ -20,13 +23,13 @@ def test_constructor():
     assert(p1.order() == 2)
     p2 = polynomial([0,1,0,0])
     assert(p2.order() == 2)
-    
+    #return 'OK'
 
 def test_lift():
     p1 = polynomial([1,1,1])
     p1 = p1.lift(10)
     assert (p1.order() == (10 + 3 - 1))
-    
+    #return 'OK'
     
 def test_truncate():
     p0 = polynomial([1,0,0])
@@ -35,7 +38,7 @@ def test_truncate():
     assert (p0.coefficients[0] == p1.coefficients[0])
     assert (p0.coefficients[1] == p1.coefficients[1])
     assert (p0.coefficients[2] == p1.coefficients[2])
-    
+    #return 'OK'
 
 def test_plus():
     p0 = polynomial([1,0,0])
@@ -51,7 +54,7 @@ def test_plus():
     assert(np.all(p2.plus(p0).coefficients[0] == 2))
     assert(np.all(p2.plus(p0).coefficients[1] == 1))
     assert(np.all(p2.plus(p0).coefficients[2] == 1))
-    
+    #return 'OK'
 
 def test_timesScalar():
     
@@ -65,7 +68,7 @@ def test_timesScalar():
     scalar1 = binaryFieldElement(1)
     assert (np.all(p0.timesScalar(scalar1).coefficients == p0.coefficients))
     assert (np.all(p0.timesScalar(scalar0).coefficients == zro))
-    
+    #return 'OK'
 
 def test_mul():
     #x^7 + x^3 + 1
@@ -92,7 +95,7 @@ def test_mul():
     assert(c.coefficients[16-14] == 1)
     assert(c.coefficients[16-15] == 0)
     assert(c.coefficients[16-16] == 1)
-    
+    #return 'OK'
 
 def test_modulu():
     #x^7 + x^3 + 1
@@ -103,14 +106,14 @@ def test_modulu():
     d = c.modulu(b)
     e = polynomial([0])
     assert (d == e)
-    
+    #return 'OK'
 
 def test_typeConsistencyGalois128():
     a = gf128(1)
     b = gf128(0)
     c = a.mul(b)
     assert c.__class__ == a.__class__
-    
+    #return 'OK'
 
 def test_plus_bug1():
     #0*X^16 0*X^15 0*X^14 0*X^13 1*X^12 0*X^11 1*X^10 1*X^9 1*X^8 0*X^7 0*X^6 1*X^5 0*X^4 1*X^3 0*X^2 1*X^1 1*X^0
@@ -122,7 +125,7 @@ def test_plus_bug1():
     #The bug was: c = 0*X^16 1*X^15 1*X^14 1*X^13 1*X^12 1*X^11 0*X^10 1*X^9 0*X^8 0*X^7 0*X^6 1*X^5 1*X^4 1*X^3 0*X^2 1*X^1 1*X^0
     testResult = polynomial([1,0,1,0,1,1,0,0,1,1])
     assert c == testResult
-    
+    #return 'OK'
 
 def test_plus_bug2():
     #0*X^0
@@ -133,28 +136,33 @@ def test_plus_bug2():
     c.coefficients = c.coefficients %2
     testResult = polynomial([0])
     assert c == testResult
-    
+    #return 'OK'
 
 def test_evaluate_at_value_bug():
     a = gf128(1)
     p = polynomial(coefficients=[a])
     eD, _ =  generateExponentAndLogTables()
     p.at(gf128(eD[0]))
-    
+    #return 'OK'
+
 def test_noZeroDivision():
     from itertools import combinations
-    eD, _ =  generateExponentAndLogTables()
+    #eD, _ =  generateExponentAndLogTables()
+    eD = gf128.exponentTable
     for combination in combinations(range(len(eD.keys())), 2):
+        print(combination)
         assert ((gf128(eD[combination[0]]) * gf128(eD[combination[1]])) != 0)
-        
+    #return 'OK'
+
 def test_plusCommutativity():
     from itertools import combinations
-    eD, _ =  generateExponentAndLogTables()
+    #eD, _ =  generateExponentAndLogTables()
+    eD = gf128.exponentTable
     for combination in combinations(range(len(eD.keys())), 2):
         a = gf128(eD[combination[0]]) + gf128(eD[combination[1]])
         b = gf128(eD[combination[1]]) + gf128(eD[combination[0]])
         assert (a == b)
-        
+    #return 'OK'        
 def test_timesCommutativity():
     from itertools import combinations
     eD, _ =  generateExponentAndLogTables()
@@ -163,13 +171,13 @@ def test_timesCommutativity():
         b = gf128(eD[combination[1]]) * gf128(eD[combination[0]])
         assert (a == b)
     
-# def test_polynomialMultiplication():
-#     eD, _ =  generateExponentAndLogTables()
-#     generatorX = polynomial(coefficients = [gf128(1)])
-#     for i in range(16):
-#         linearFactor = polynomial(coefficients = [gf128(1), gf128(eD[i+1])])
-#         generatorX = generatorX * linearFactor
-#         generatorX.printValues()
+def test_polynomialMultiplication():
+    eD, _ =  generateExponentAndLogTables()
+    generatorX = polynomial(coefficients = [gf128(1)])
+    for i in range(16):
+        linearFactor = polynomial(coefficients = [gf128(1), gf128(eD[i+1])])
+        generatorX = generatorX * linearFactor
+        generatorX.printValues()
 
 def test_chienSearch():
     eD, _ =  generateExponentAndLogTables()
@@ -241,5 +249,106 @@ def test_reproduceMultiplicationBug():
     for c in bug.coefficients:
         assert ((c == 0) or (c==1))
 
+def test_gf256CachedMultiplication():
+    from itertools import product
+    for lhsList in product(range(2), repeat = 8):
+        for rhsList in product(range(2), repeat = 8):
+            lhs = gf256(lhsList)
+            rhs = gf256(rhsList)
+            assert lhs * rhs == rhs * lhs
+            assert lhs * rhs == lhs.mul(rhs)
+    return 'OK'
 
+def test_moduluOverLargerFields():
+    parityLength = 15
+    # Create a generator polynomial for encoding messages, capable of decoding up to designedDistance = 15 erasures
+    alpha = gf256([0,0,0,0,0,0,1,0])
+    beta = gf256([0,0,0,0,0,0,1,0])
+    wan = gf256([0,0,0,0,0,0,0,1])
+    zro = gf256([0,0,0,0,0,0,0,0])
+    # Initialize the generator polynomial as (X - alpha)
+    generatorX = polynomial([wan, alpha])
+    for i in range(parityLength):
+        beta = beta * alpha
+        linearFactor = polynomial([wan, beta])
+        generatorX = generatorX * linearFactor
+    #The degree of generatorX should now be parityLength + 1, and the leading coefficient should be 1    
+    assert(generatorX.order() == (parityLength + 1))
+    assert(generatorX.coefficients[0] == gf256(1))
     
+    messageX = polynomial([gf256(1)]).lift(parityLength + 1)
+    parityX = messageX.modulu(generatorX)
+    temp = generatorX.ignoreFromDegree(parityLength + 1)
+    assert(parityX == temp)
+    
+    
+# def test_reproduceModuluBug():
+#     # This was not a bug, but a faulty test !
+#     # This test originated from another test where the leading coefficient of the message
+#     # was 1, and its order was the same as the generator polynomial, 
+#     # in which case the modulus is (exactly) the lower coefficients of the generator polynomial.
+    
+#     parityLength = 15
+#     # Create a generator polynomial for encoding messages, capable of decoding up to designedDistance = 15 erasures
+#     alpha = gf256([0,0,0,0,0,0,1,0])
+#     beta = gf256([0,0,0,0,0,0,1,0])
+#     wan = gf256([0,0,0,0,0,0,0,1])
+#     zro = gf256([0,0,0,0,0,0,0,0])
+#     # Initialize the generator polynomial as (X - alpha)
+#     generatorX = polynomial([wan, alpha])
+#     for i in range(parityLength):
+#         beta = beta * alpha
+#         linearFactor = polynomial([wan, beta])
+#         generatorX = generatorX * linearFactor
+#     messageX = polynomial([gf256([1,1,1,1,0,1,1,0])]).lift(parityLength + 1)
+#     parityX = messageX.modulu(generatorX)
+#     temp = generatorX.ignoreFromDegree(parityLength + 1)
+#     temp.printValues()
+#     parityX.printValues()
+#     assert(parityX == temp)
+    
+def test_polynomialTimesOverLargerFields():
+    parityLength = 15
+    # Create a generator polynomial for encoding messages, capable of decoding up to designedDistance = 15 erasures
+    alpha = gf256([0,0,0,0,0,0,1,0])
+    beta = gf256([0,0,0,0,0,0,1,0])
+    wan = gf256([0,0,0,0,0,0,0,1])
+    zro = gf256([0,0,0,0,0,0,0,0])
+    # Initialize the generator polynomial as (X - alpha)
+    generatorX = polynomial([wan, alpha])
+    for i in range(parityLength):
+        beta = beta * alpha
+        linearFactor = polynomial([wan, beta])
+        generatorX = generatorX * linearFactor
+    someElement = gf256([1,1,1,1,0,1,1,0])
+    temp = generatorX.timesScalar(someElement)
+    #print(temp.coefficients[0].getValue())
+    assert(temp.coefficients[0] == someElement)
+
+def test_multiplicationModuluBug():
+    # The bug was when gf128(exponentTable[5]) * gf128(exponentTable[6]) was attemted, and the computation never ended when entering the modulu calculation.
+    eD = gf128.exponentTable
+    assert ((gf128(eD[5]) * gf128(eD[6])) != 0)
+    #return 'OK'
+
+if __name__ == "__main__":
+    #test_multiplicationModuluBug()
+    #test_lift()
+    #test_truncate()
+    
+    #test_noZeroDivision()
+    
+    #test_chienSearch()
+    #test_constructor()
+    #test_evaluate_at_value_bug()
+    
+    #test_logExponentRoundtrip()
+    #test_exponentiation()
+    #test_modulu()
+    #test_polynomialRealNumbers()
+    #test_reproduceMultiplicationBug()
+    #test_gf256CacheedMultiplication()
+    #test_moduluOverLargerFields()
+    #test_polynomialTimesOverLargerFields()
+    test_reproduceModuluBug()
+    #pass

@@ -6,6 +6,7 @@ Created on Fri Sep 20 09:31:34 2024
 
 ### Reed Solomon code over GF(2^8) example
 """
+import code
 import os, sys
 reedSolomonProjectDir = os.environ.get('REEDSOLOMON')
 if reedSolomonProjectDir == None: 
@@ -14,14 +15,14 @@ if reedSolomonProjectDir == None:
 sys.path.insert(0, reedSolomonProjectDir)
 from arithmetic import polynomial, gf256
 
-# Constant
+# Constants
 SYMBOL_LENGTH = 8
 SEED = 7134066
 PARITY_LENGTH = 15
 
 import numpy as np
 localPRNG = np.random.RandomState(SEED)
-CODEWORD_LENGTH = (2 ** SYMBOL_LENGTH) - 1
+CODEWORD_LENGTH = 16 #(2 ** SYMBOL_LENGTH) - 1
 
 
 
@@ -38,22 +39,28 @@ for i in range(PARITY_LENGTH):
     generatorPolynomialX = generatorPolynomialX * linearFactor
 
 # Print the coefficients of the generator polynomial
+print("The generator polynomial is:")
 generatorPolynomialX.printValues()
 
 # generate some data
 data = localPRNG.randint(0, 2, (CODEWORD_LENGTH - PARITY_LENGTH) * SYMBOL_LENGTH)
 # parse the binary data into 8-bit-long-symbols and cast into (a list of) gf256 symbols
-dataParsed = [gf256(data[i * 8 : (i + 1) * 8]) for i in range(CODEWORD_LENGTH  - PARITY_LENGTH)]
+dataParsed = [gf256([1,1,1,1,0,1,1,0])]#[gf256(1)]#[gf256(data[i * 8 : (i + 1) * 8]) for i in range(CODEWORD_LENGTH  - PARITY_LENGTH)]
 # Create a codeword polynomial that contains the data as the coefficients of the higher-than-PARITY_LENGTH powers
-codewordX = polynomial(dataParsed).lift(PARITY_LENGTH)
+codewordX = polynomial(dataParsed).lift(PARITY_LENGTH + 1)
+print("The codeword polynomial should be of degree " + str(PARITY_LENGTH + 1) + " and have 0s in the rightmost " + str(PARITY_LENGTH + 1) + " coefficients:")
 codewordX.printValues()
+
 parityX = codewordX.modulu(generatorPolynomialX)
-codewordX.coefficients[0 : PARITY_LENGTH] = parityX.coefficients
+print("The parity polynomial should be a polynomial of degree " + str(PARITY_LENGTH) + " :")
+parityX.printValues()
+codewordX = codewordX + parityX 
 
 # Test - codewordX modulu generator polynomial should now be 0:
-generatorPolynomialX.printValues()
-codewordX.printValues()
+#generatorPolynomialX.printValues()
+#codewordX.printValues()
 modulusX = codewordX.modulu(generatorPolynomialX)
+print("The codeword polynomial modulu the generator polynial should be the all 0 polynomial:")
 modulusX.printValues()
 
 

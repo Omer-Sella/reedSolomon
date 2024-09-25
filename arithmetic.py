@@ -4,6 +4,7 @@ Created on Tue Feb 27 11:36:27 2024
 
 @author: Omer
 """
+from logging import setLogRecordFactory
 import os, sys
 reedSolomonProjectDir = os.environ.get('REEDSOLOMON')
 if reedSolomonProjectDir == None: 
@@ -15,6 +16,27 @@ import copy
 This file contains some ad-hoc arithmetic over the binary field.
 """
 IEEE_BINARY_DTYPE = np.int32
+
+
+G_8_0 = [1,0,0,0,1,1,1,0,1] #x^8 + x^4 + x^3 + x^2 + 1
+G_8_1 = [1,0,0,1,0,1,0,1,1]#x^8 + x^5 + x^3 + x^1 + 1
+#x^8 + x^6 + x^4 + x^3 + x^2 + x^1 + 1
+#x^8 + x^6 + x^5 + x^1 + 1
+#x^8 + x^6 + x^5 + x^2 + 1
+#x^8 + x^6 + x^5 + x^3 + 1
+#x^8 + x^7 + x^6 + x^1 + 1
+#x^8 + x^7 + x^6 + x^5 + x^2 + x^1 + 1
+
+G_7_0 =  [1,0,0,0,0,0,1,1]   #x^7 + x^1 + 1 
+G_7_1 =  [1,0,0,0,1,0,0,1] #x^7 + x^3 + 1 
+G_7_2 =  [1,0,0,0,1,1,1,1] #x^7 + x^3 + x^2 + x^1 + 1 
+G_7_3 =  [1,0,0,1,1,1,0,1] #x^7 + x^4 + x^3 + x^2 + 1 
+G_7_4 =  [1,0,1,1,1,1,1,1] #x^7 + x^5 + x^4 + x^3 + x^2 + x^1 + 1 
+G_7_5 =  [1,1,0,0,1,0,1,1] #  #x^7 + x^6 + x^3 + x^1 + 1
+G_7_6 =  [1,1,0,1,0,1,0,1] #x^7 + x^6 + x^4 + x^2 + 1
+G_7_7 =  [1,1,1,0,0,1,0,1] # x^7 + x^6 + x^5 + x^2 + 1
+G_7_8 =  [1,1,1,1,0,1,1,1] #x^7 + x^6 + x^5 + x^4 + x^2 + x^1 + 1 
+
 
 class binaryFieldElement:
     def __init__(self, value):
@@ -123,8 +145,6 @@ class polynomial():
         return self
             
     def old_plus(self, other):
-        self.printValues()
-        other.printValues()
         if other.order() > self.order():
             small = self
             big = other
@@ -159,27 +179,55 @@ class polynomial():
             
         return polynomial(coefficients = newCoefficients)
     
+    def symbolicPlus(self, other):
+        if len(other.coefficients) > len(self.coefficients):
+            newCoefficients = copy.deepcopy(other.coefficients)
+            diff = len(other.coefficients) - len(self.coefficients)
+            for i in range(len(self.coefficients)):
+                newCoefficients[diff + i] = "((" + newCoefficients[diff + i] + " + " + self.coefficients[i] +") %2)"
+        elif len(other.coefficients) < len(self.coefficients):
+            newCoefficients = copy.deepcopy(self.coefficients)
+            diff = len(self.coefficients) - len(other.coefficients)
+            for i in range(len(other.coefficients)):
+                newCoefficients[diff + i] = "((" + newCoefficients[diff + i] + " + " + other.coefficients[i] + ")%2)"
+        else:
+            newCoefficients = copy.deepcopy(self.coefficients)
+            diff = 0
+            for i in range(len(other.coefficients)):
+                newCoefficients[diff + i] = "((" + newCoefficients[diff + i] + " + " + other.coefficients[i] + ")%2)"
     
     def minus(self, other):
         return self.plus(other)
     
+    def symbolicMinus(self, other):
+        return self.symbolicPlus(other)
+    
 
     def lift(self, liftBy):
-        assert(liftBy >=0 )
+        if liftBy < 0:
+            raise ValueError("Lifting a polynomial can only be done for positive integers")
         if liftBy > 0:
             newCoefficients = list(self.coefficients)
             for i in range(liftBy):
                 newCoefficients.append(self.coefficients[0].__class__(0)) 
-        #newCoefficients = np.zeros((liftBy + len(self.coefficients)), dtype = IEEE_BINARY_DTYPE)
-        #newCoefficients[0 : len(self.coefficients)] = self.coefficients
             newCoefficients = np.array(newCoefficients)    
             self.coefficients = newCoefficients
         return self
     
     def timesScalar(self, gfScalar):
+        """
+        Note that this function does not alter self, instead it returns a new polynomial which is the result.
+        """
         newCoefficients = copy.deepcopy(self.coefficients)
         for j in range(len(self.coefficients)):
             newCoefficients[j] = newCoefficients[j] * gfScalar
+        
+        return polynomial(newCoefficients)
+    
+    def symbolicTimesScalar(self, string):
+        newCoefficients = copy.deepcopy(self.coefficients)
+        for j in range(len(self.coefficients)):
+            newCoefficients[j] = "((" + newCoefficients[j] + " * " + string + ") %2)"
         return polynomial(newCoefficients)
     
     def times(self, other):
@@ -192,6 +240,19 @@ class polynomial():
             temp.lift(length - 1 - i)
             temp = temp.timesScalar(fieldElement)    
             result = result.plus(temp)
+            i = i + 1
+        return result
+
+    def symbolicTimes(self, other):
+        i = 0
+        length = len(other.coefficients)
+        result = polynomial(coefficients = ['0'])#self.coefficients[0].__class__(0)])
+        while i < length: 
+            fieldElement = other.coefficients[i]
+            temp = polynomial(self.coefficients)
+            temp.lift(length - 1 - i)
+            temp = temp.symbolicTimesScalar(fieldElement)    
+            result = result.symbolicPlus(temp)
             i = i + 1
         return result
 
@@ -208,9 +269,12 @@ class polynomial():
             i = i + 1
         return result
 
-    def ignoreFromDegree(self, degreeToTruncateFrom):
-        if (degreeToTruncateFrom + 1) >= len(self.coefficients):
-            newCoefficients = self.coefficients[0 : (degreeToTruncateFrom + 1)]
+    def ignoreFromDegree(self, degreeToIgnoreFrom):
+        #if (degreeToTruncateFrom + 1) >= len(self.coefficients):
+        if (degreeToIgnoreFrom ) <= self.order(): 
+            #newCoefficients = self.coefficients[0 : (degreeToTruncateFrom + 1)]
+            # Recall that the leading coefficient is the FIRST non zero coefficient, and if the order of a polynomial is D, then there are at least D+1 coefficients (with possibly leading 0s)
+            newCoefficients = self.coefficients[len(self.coefficients) - self.getLeadingCoefficientIndex() - degreeToIgnoreFrom : ]
             return polynomial(coefficients = newCoefficients)
         else:
             return self
@@ -232,23 +296,60 @@ class polynomial():
         
     def modulu(self, divisor):
         # Safety - no division by zero
-        assert (not divisor.isZero())
-        # Warning - this is only over a binary field !
+        if divisor.isZero():
+            raise ValueError("Divisor cannot be the 0 polynomial.")
+        # Safety - the leading coefficient of the divisor is not zero
+        if divisor.coefficients[0] == 0:
+            raise ValueError("An attempt was made to divide by a polynomial which leading coefficient is 0. Truncate the divisor before dividing.")
         one = self.coefficients[0].__class__(1)
         remainder = polynomial(copy.deepcopy(self.coefficients))
+        print("At setup, remainder is:")
+        remainder.printValues()
+        print("The divisor is:")
+        divisor.printValues()
         divisorOrder = divisor.order()
+        remainderOrder = remainder.order()
+        divisorLeadingCoefficientInverse = one / divisor.coefficients[0]
+        #divisorLeadingCoefficientInverse = one // divisor.coefficients[0]
         if divisorOrder == 0:
             remainder = polynomial( coefficients = [0])
-        while remainder.order() >= divisorOrder and not remainder.isZero():
+        while remainderOrder >= divisorOrder and not remainder.isZero():
             i = remainder.getLeadingCoefficientIndex()
+            leadingCoefficient = remainder.coefficients[i]#self.coefficients[i]
             #kill ther leading coefficient
-            fieldElementInverse = one / remainder.coefficients[i]
+            leadingCoefficientKiller = leadingCoefficient * divisorLeadingCoefficientInverse
             temp = polynomial(copy.deepcopy(divisor.coefficients))
-            temp.lift(remainder.order() - divisor.order())
-            temp.timesScalar(fieldElementInverse)
-            remainder = remainder + temp # Note + rather than -, all over a binary field
+            temp.lift(remainderOrder - divisorOrder)
+            # Important !!! Note that while pX.timesScalar(scalar) returns the desired result, it does not alter pX !!!
+            temp = temp.timesScalar(leadingCoefficientKiller)
+            remainder = remainder + temp #temp.timesScalar(leadingCoefficientKiller) # Note + rather than -, all over a binary field
             if np.isscalar(self.coefficients[0]):
                 remainder.coefficients = remainder.coefficients %2
+            remainderOrder = remainder.order()
+        # Omer: I don't think the line below is necessary anymore, since remainder is already declared as a polynomial.    
+        remainder = polynomial(remainder.coefficients[-len(divisor.coefficients) + 1 : ])
+        return remainder
+
+    def symbolicModulu(self, divisor):
+        # WARNING - the assumption here is that the coefficients are only 0 or 1 !!!
+        # This function is really only used when calculating symbolic multiplication of gf(2**M) elements
+        remainder = polynomial(copy.deepcopy(self.coefficients))
+        divisorOrder = divisor.order()
+        symbolicOrder = remainder.order()
+        divisorSymbolicOrder = divisor.order()
+        i = 0 #remainder.getLeadingCoefficientIndex()
+        while symbolicOrder >= divisorOrder and not remainder.isZero():
+            
+            #kill ther leading coefficient
+            fieldElementInverse = remainder.coefficients[i] #.inverse()
+            temp = polynomial(copy.deepcopy(divisor.coefficients))
+            temp.lift(symbolicOrder - divisorSymbolicOrder)
+            temp.symbolicTimesScalar(fieldElementInverse)
+            remainder = remainder.symbolicPlus(temp) 
+            #if np.isscalar(self.coefficients[0]):
+            #    remainder.coefficients = remainder.coefficients %2
+            symbolicOrder = symbolicOrder - 1
+            remainder.coefficients.popleft()
         remainder = polynomial(remainder.coefficients[-len(divisor.coefficients) + 1 : ])
         return remainder
     
@@ -325,22 +426,14 @@ class gf128(polynomial):
     Ad-hoc implementation of gf128 arithmetic, since this arithmetic class has several possible specific optimizations 
     """
     
-    pathToInverseTable = reedSolomonProjectDir + "/gf128Inverse.npy"
-    pathToExponentTable = reedSolomonProjectDir + "/gf128Exponent.npy"
-    pathToLogTable = reedSolomonProjectDir + "/gf128Log.npy"
+    pathToInverseTable = reedSolomonProjectDir + "/cachedArithmetic/gf128Inverse.npy"
+    pathToExponentTable = reedSolomonProjectDir + "/cachedArithmetic/gf128Exponent.npy"
+    pathToLogTable = reedSolomonProjectDir + "/cachedArithmetic/gf128Log.npy"
     inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()
     exponentTable = np.load(pathToExponentTable, allow_pickle = True).item()
     logTable = np.load(pathToLogTable, allow_pickle = True).item()
     generatorPolynomial = polynomial([1,0,0,0,1,0,0,1])
-    #x^7 + x^1 + 1 = [1,0,0,0,0,0,1,1]
-    #x^7 + x^3 + 1 = [1,0,0,0,1,0,0,1]
-    #x^7 + x^3 + x^2 + x^1 + 1 = [1,0,0,0,1,1,1,1]
-    #x^7 + x^4 + x^3 + x^2 + 1 = [1,0,0,1,1,1,0,1]
-    #x^7 + x^5 + x^4 + x^3 + x^2 + x^1 + 1 = [1,0,1,1,1,1,1,1]
-    #x^7 + x^6 + x^3 + x^1 + 1 = [1,1,0,0,1,0,1,1]
-    #x^7 + x^6 + x^4 + x^2 + 1 = [1,1,0,1,0,1,0,1]
-    #x^7 + x^6 + x^5 + x^2 + 1 = [1,1,1,0,0,1,0,1]
-    #x^7 + x^6 + x^5 + x^4 + x^2 + x^1 + 1 = [1,1,1,1,0,1,1,1]
+
     
     
     def __init__(self, value):
@@ -463,6 +556,7 @@ def generateInverseTable(gfType = gf128, generatorAsList = [0,0,0,0,0,1,0]):
     ONE = gfType(wanAsList) #gf128([0,0,0,0,0,0,1])
     inverseDictionary[key] = temp.getValue()
     for i in range(1,(2 ** len(generatorAsList) ) - 1, 1):
+        print(i)
         a = a * b
         key = str(a.getValue())
         temp = gfType(wanAsList)# gf128([0,0,0,0,0,1,0])
@@ -471,29 +565,46 @@ def generateInverseTable(gfType = gf128, generatorAsList = [0,0,0,0,0,1,0]):
         inverseDictionary[key] = temp.getValue()
     return inverseDictionary
 
+def generateTimesTable(gfType = gf128, generatorAsList = [0,0,0,0,0,1,0]):
+    a = gfType(generatorAsList)
+    b = gfType(generatorAsList)
+    generator = gfType(generatorAsList)
+    timesTable = dict()
+    zro = gfType([0] * len(generatorAsList))
+    # Populate zero times b and b times zero
+    timesTable["".join(str(c) for c in zro.getValue())] = dict()
+    timesTable["".join(str(c) for c in zro.getValue())]["".join(str(e) for e in zro.getValue())] = zro.getValue()
+    for i in range(2 ** len(generatorAsList) - 1):        
+        timesTable["".join(str(c) for c in zro.getValue())]["".join(str(e) for e in b.getValue())] = zro.getValue()
+        timesTable["".join(str(c) for c in b.getValue())] = dict()
+        timesTable["".join(str(c) for c in b.getValue())]["".join(str(e) for e in zro.getValue())] = zro.getValue()
+        b = b.mul(generator)
+    # Reset b
+    b = gfType(generatorAsList)
+    for i in range(2 ** len(generatorAsList) - 1):
+        for j in range(2 ** len(generatorAsList) - 1):
+            timesTable["".join(str(e) for e in a.getValue())]["".join(str(ee) for ee in b.getValue())]  = a.mul(b).getValue()
+            b = b.mul(generator)
+        a = a.mul(generator)
+    return timesTable
+
 
 class gf256(polynomial):
     """
     This is a step towards a generic gf(M) implementation
     """
-    pathToInverseTable = reedSolomonProjectDir + "/gf256Inverse.npy"
-    pathToLogTable = reedSolomonProjectDir + "/gf256Log.npy"
-    pathToExponentTable = reedSolomonProjectDir + "/gf256Exponent.npy"
+    polynomialName = "G_8_0"
+    pathToInverseTable = reedSolomonProjectDir + "/cachedArithmetic/gf256Inverse_" + polynomialName + ".npy"
+    pathToLogTable = reedSolomonProjectDir + "/cachedArithmetic/gf256Log_" + polynomialName + ".npy"
+    pathToExponentTable = reedSolomonProjectDir + "/cachedArithmetic/gf256Exponent_"+ polynomialName + ".npy"
     inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()  
     exponentTable = np.load(pathToExponentTable, allow_pickle = True).item()
     logTable = np.load(pathToLogTable, allow_pickle = True).item()
+    pathToTimesTable = reedSolomonProjectDir + "/cachedArithmetic/gf256TimesTable_" + polynomialName + ".npy"
+    timesTable = np.load(pathToTimesTable, allow_pickle = True).item()
     # Irreducible polynomials from https://www.partow.net/programming/polynomials/index.html#deg08
-    #x^8 + x^4 + x^3 + x^2 + 1
-    #x^8 + x^5 + x^3 + x^1 + 1
-    #x^8 + x^6 + x^4 + x^3 + x^2 + x^1 + 1
-    #x^8 + x^6 + x^5 + x^1 + 1
-    #x^8 + x^6 + x^5 + x^2 + 1
-    #x^8 + x^6 + x^5 + x^3 + 1
-    #x^8 + x^7 + x^6 + x^1 + 1
-    #x^8 + x^7 + x^6 + x^5 + x^2 + x^1 + 1
-    
-    #In 177-1 it seems like they used the polynomial x^8 + x^7 + 0 + x^5 + x^4 + 0 + 0 + x + 1 which I'm not sure is irreducible / primitive 
-    generatorPolynomial = polynomial(coefficients = [1,1,0,1,1,0,0,1,1])
+    #In 177-1 it seems like they used the polynomial x^8 + x^7 + 0 + x^5 + x^4 + 0 + 0 + x + 1 which is not irreducible / primitive 
+    generatorPolynomial = polynomial(G_8_0)
     def __init__(self, value):
         if hasattr(value, '__len__'):
             if len(value) == 8:
@@ -516,11 +627,15 @@ class gf256(polynomial):
         return result
         
     def inverse(self):
-        if self.inverseTable is not None:
-            return self.__class__(self.inverseTable[str(self.getValue())])
-        else:
+        return self.__class__(self.inverseTable[str(self.getValue())]) #"".join(str(e) for e in self.getValue())])
+        #if self.inverseTable is not None:   
+        #else:
             # Omer Sella: consider a verilog oriented implementation here, could be slow to run on a CPU but better than not working.
-            raise
+        #    raise
+    
+    def __mul__(self, other):
+        
+        return self.__class__(self.timesTable["".join(str(e) for e in self.getValue())]["".join(str(c) for c in other.getValue())])
     
     def binaryMul(self, other):
         if other.value == 0:
@@ -539,7 +654,7 @@ class gf256(polynomial):
         return self.mul(other.inverse())
     
     def __truediv__(self, other):
-        return self.mul(other.inverse())
+        return self * other.inverse()
 
     def __add__(self, other):
         return self.plus(other)
@@ -547,8 +662,7 @@ class gf256(polynomial):
     def __sub__(self, other):
         return self.minus(other)
      
-    def __mul__(self, other):
-        return self.mul(other)
+    
      
     def __eq__(self, other):
         result = False
@@ -564,4 +678,7 @@ class gf256(polynomial):
      
     def __ne__(self, other):
         return (not (self == other))
+    
+    
+        
     
