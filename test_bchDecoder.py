@@ -67,7 +67,7 @@ def coverage_bchDecoder_two_bit_flips():
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
         correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
         receivedBinaryAsPolynomial = polynomial(coefficients = list(map(gf128, encodedZeroData)))
-        syndromes = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
+        syndromes = syndromeCalculator(eD, gf128, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         # Error found in both locations
         assert correctionVector[pair[0]] == 1 
         assert correctionVector[pair[1]] == 1 
@@ -111,7 +111,7 @@ def test_connection_polynomial_for_two_errors_explicit_calculation_gf128():
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
         correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
         receivedBinaryAsPolynomial = polynomial(coefficients = list(map(gf128, encodedZeroData)))
-        syndromes = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
+        syndromes = syndromeCalculator(eD, gf128, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         gfOne = gf128(1)
         lambda1 = syndromes[0]
         lambda2 = (syndromes[2] + (syndromes[0] * syndromes[0] * syndromes[0])) / syndromes[0]
@@ -139,7 +139,7 @@ def test_connection_polynomial_for_three_errors_explicit_calculation_gf128():
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
         correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
         receivedBinaryAsPolynomial = polynomial(coefficients = list(map(gf128, encodedZeroData)))
-        syndromes = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
+        syndromes = syndromeCalculator(eD, gf128, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         gfOne = gf128(1)
         lambda1 = syndromes[0]
         lambda2 = ((syndromes[0] * syndromes[0]) 
@@ -178,7 +178,7 @@ def test_connection_polynomial_for_four_errors_explicit_calculation_gf128():
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
         correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
         receivedBinaryAsPolynomial = polynomial(coefficients = list(map(gf128, encodedZeroData)))
-        s = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
+        s = syndromeCalculator(eD, gf128, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         gfOne = gf128(1)
         lambda1 = s[0]
         lambda2 = (s[0] * (s[6] + s[0]*s[0]*s[0]*s[0]*s[0]*s[0]*s[0]) + s[2] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4])) / (s[2] * (s[0]*s[0]*s[0] + s[2]) + s[0] * (s[0]*s[0]*s[0]*s[0]*s[0] + s[4]))
@@ -206,7 +206,7 @@ def debugHelper():
         # Notice that the decoder needs to produce the error locator polynomial eX for this coverage !
         correctedVector, correctionVector, eX = bchDecoder( receivedBinaryVecotor = encodedZeroData, gfType = gf128, exponentDictionary = eD, numberOfPowers = 16, codewordLengthMaximal = 127)
         receivedBinaryAsPolynomial = polynomial(coefficients = list(map(gf128, encodedZeroData)))
-        s = syndromeCalculator(eD, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
+        s = syndromeCalculator(eD, gf128, numberOfPowers = 16, receivedBinaryX = receivedBinaryAsPolynomial)
         gfOne = gf128(1)
         lambda1 = s[0]
         lambda2 = (s[0] * (s[6] + s[0] * s[0] * s[0] * s[0] * s[0] * s[0] * s[0]) + s[2] * 

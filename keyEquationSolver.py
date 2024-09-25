@@ -7,19 +7,20 @@ Created on Tue Feb 27 10:03:01 2024
 #from arithmetic import binaryFieldElement as galoisElement
 #from arithmetic import polynomial as polynomialClass
 import copy
+from arithmetic import polynomial
 
 def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
      # Key Equation Solver over an extension binary field
      # See Todd K. Moon page 258
-     # Syndromes need to be passed as a list of syndromes of class galoisElementClass
-     assert (syndromes[0].__class__ == galoisElementClass)
+     # No safety - Syndromes need to be passed as a list of syndromes of class galoisElementClass
+     # assert (syndromes[0].__class__ == galoisElementClass)
      L = 0 #Current Length of the LFSR
      #cX = polynomialClass(coefficients = [1]) #Connection polynomial
      #pX = polynomialClass(coefficients = [1]) #The connection polynomial before last change
-     cX = polynomialClass(coefficients = [galoisElementClass(1)]) #Connection polynomial
-     pX = polynomialClass(coefficients = [galoisElementClass(1)]) #The connection polynomial before last change
-     hX = polynomialClass(coefficients = [galoisElementClass(0)])
-     tX = polynomialClass(coefficients = [galoisElementClass(0)])
+     cX = polynomial(coefficients = [galoisElementClass(1)]) #Connection polynomial
+     pX = polynomial(coefficients = [galoisElementClass(1)]) #The connection polynomial before last change
+     hX = polynomial(coefficients = [galoisElementClass(0)])
+     tX = polynomial(coefficients = [galoisElementClass(0)])
      l = 1
      oldDiscrepancy = galoisElementClass(value = 1) #was 1  but I think might be wrong
      for k in range(len(syndromes)):

@@ -303,10 +303,6 @@ class polynomial():
             raise ValueError("An attempt was made to divide by a polynomial which leading coefficient is 0. Truncate the divisor before dividing.")
         one = self.coefficients[0].__class__(1)
         remainder = polynomial(copy.deepcopy(self.coefficients))
-        print("At setup, remainder is:")
-        remainder.printValues()
-        print("The divisor is:")
-        divisor.printValues()
         divisorOrder = divisor.order()
         remainderOrder = remainder.order()
         divisorLeadingCoefficientInverse = one / divisor.coefficients[0]
@@ -381,6 +377,12 @@ class polynomial():
     
     def getCoefficient(self, index):
         return self.coefficients[len(self.coefficients) - (index + 1)]
+    
+    def asArray(self):   
+        if np.isscalar(self.coefficients[0]):
+            return self.coefficients
+        else:
+            return np.asarray([c.asArray() for c in self.coefficients]).flatten()
     
     
                 

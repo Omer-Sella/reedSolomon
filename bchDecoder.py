@@ -9,16 +9,15 @@ Created on Tue May 28 11:13:47 2024
 from keyEquationSolver import keyEquationSolver
 from arithmetic import binaryFieldElement as galoisElement
 from arithmetic import polynomial
-from arithmetic import gf128
 from arithmetic import generateExponentAndLogTables
 import numpy as np
 import time
 
-def syndromeCalculator(exponentDictionary, numberOfPowers, receivedBinaryX):
+def syndromeCalculator(exponentDictionary, gfType, numberOfPowers, receivedBinaryX):
     syndromes = []
     for i in range(numberOfPowers):
         # exponent table starts with gf(1) at index 0 (!), but s0 is receivedBinaryX(\alpha) ! 
-        newSyndrome = receivedBinaryX.at(gf128(exponentDictionary[i + 1]))
+        newSyndrome = receivedBinaryX.at(gfType(exponentDictionary[i + 1]))
         syndromes.append(newSyndrome)
     return syndromes
 
@@ -38,9 +37,9 @@ def forneyCalculator(syndromeX, errorLocatorX, t):
 
 def bchDecoder(receivedBinaryVecotor, gfType, exponentDictionary, numberOfPowers, codewordLengthMaximal, reedSolomon = False):
     correctionVector = np.zeros(codewordLengthMaximal, dtype = np.int32)
-    receivedBinaryX = polynomial(coefficients = list(map(gf128, receivedBinaryVecotor))) #list(map(gf128, receivedBinaryVecotor[::-1])))
+    receivedBinaryX = polynomial(coefficients = list(map(gfType, receivedBinaryVecotor))) #list(map(gf128, receivedBinaryVecotor[::-1])))
     # Calculate syndromes
-    syndromes = syndromeCalculator(exponentDictionary, numberOfPowers, receivedBinaryX)
+    syndromes = syndromeCalculator(exponentDictionary, gfType, numberOfPowers, receivedBinaryX)
     # Calculate error locator polynomial
     errorLocatorX = keyEquationSolver(polynomial, gfType, syndromes)
     #errorLocatorX.printValues()

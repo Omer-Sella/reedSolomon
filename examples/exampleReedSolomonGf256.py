@@ -6,14 +6,19 @@ Created on Fri Sep 20 09:31:34 2024
 
 ### Reed Solomon code over GF(2^8) example
 """
-import code
+
 import os, sys
+
+
+
+
 reedSolomonProjectDir = os.environ.get('REEDSOLOMON')
 if reedSolomonProjectDir == None: 
     #Note that this is an example, so the relevant modules will be in its parent directory, hence os.path.dirname(os.getcwd()) and not os.getcwd()
     reedSolomonProjectDir = os.path.dirname(os.getcwd()) 
 sys.path.insert(0, reedSolomonProjectDir)
 from arithmetic import polynomial, gf256
+from bchDecoder import bchDecoder
 
 # Constants
 SYMBOL_LENGTH = 8
@@ -22,7 +27,7 @@ PARITY_LENGTH = 15
 
 import numpy as np
 localPRNG = np.random.RandomState(SEED)
-CODEWORD_LENGTH = 16 #(2 ** SYMBOL_LENGTH) - 1
+CODEWORD_LENGTH = 100 #(2 ** SYMBOL_LENGTH) - 1
 
 
 
@@ -45,7 +50,7 @@ generatorPolynomialX.printValues()
 # generate some data
 data = localPRNG.randint(0, 2, (CODEWORD_LENGTH - PARITY_LENGTH) * SYMBOL_LENGTH)
 # parse the binary data into 8-bit-long-symbols and cast into (a list of) gf256 symbols
-dataParsed = [gf256([1,1,1,1,0,1,1,0])]#[gf256(1)]#[gf256(data[i * 8 : (i + 1) * 8]) for i in range(CODEWORD_LENGTH  - PARITY_LENGTH)]
+dataParsed = [gf256(data[i * 8 : (i + 1) * 8]) for i in range(CODEWORD_LENGTH  - PARITY_LENGTH)]
 # Create a codeword polynomial that contains the data as the coefficients of the higher-than-PARITY_LENGTH powers
 codewordX = polynomial(dataParsed).lift(PARITY_LENGTH + 1)
 print("The codeword polynomial should be of degree " + str(PARITY_LENGTH + 1) + " and have 0s in the rightmost " + str(PARITY_LENGTH + 1) + " coefficients:")
@@ -62,6 +67,21 @@ codewordX = codewordX + parityX
 modulusX = codewordX.modulu(generatorPolynomialX)
 print("The codeword polynomial modulu the generator polynial should be the all 0 polynomial:")
 modulusX.printValues()
+print(modulusX == polynomial([gf256(0)]))
+
+#Now let's flip some bits:
+#noiseX = polynomial([gf256(0) for i in range(CODEWORD_LENGTH)])
+#noiseX.coefficients[0] = wan #Reminder - wan = [0,0,0,0,0,0,0,1]
+
+receivedBinary = codewordX.asArray()# + noiseX
+#receivedX.coefficients[0].coefficients[0] = 1 - receivedX.coefficients[0].coefficients[0]
+receivedBinary[0] = 1 - receivedBinary[0]
+correctedVector, correctionVector, errorLocatorX = bchDecoder(receivedBinaryVecotor = receivedBinary, 
+                                                              gfType = gf256, 
+                                                              exponentDictionary = gf256.exponentTable, 
+                                                              numberOfPowers = PARITY_LENGTH, 
+                                                              codewordLengthMaximal = (2 ** SYMBOL_LENGTH - 1), 
+                                                              reedSolomon = True)
 
 
 
