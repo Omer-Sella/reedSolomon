@@ -8,10 +8,6 @@ Created on Fri Sep 20 09:31:34 2024
 """
 
 import os, sys
-
-
-
-
 reedSolomonProjectDir = os.environ.get('REEDSOLOMON')
 if reedSolomonProjectDir == None: 
     #Note that this is an example, so the relevant modules will be in its parent directory, hence os.path.dirname(os.getcwd()) and not os.getcwd()
