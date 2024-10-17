@@ -12,6 +12,7 @@ if reedSolomonProjectDir == None:
 sys.path.insert(0, reedSolomonProjectDir)
 import numpy as np
 import copy
+from abc import ABC, abstractmethod
 """
 This file contains some ad-hoc arithmetic over the binary field.
 """
@@ -681,6 +682,124 @@ class gf256(polynomial):
     def __ne__(self, other):
         return (not (self == other))
     
+    def getLog(self):
+        if self == 0 :
+            raise ValueError('Log is not defined for 0')
+        else:
+            key = ''.join(map(str, self.coefficients))
+        return self.logTable[key]
+
+class gfBase(polynomial, ABC):
+    """
+    A common API for all manifestations of galois fields over the binary field.
+    The user must specify:
+    polynomialName : one of the constants representing polynomials at the top of this file.
+    pathToInverseTable : we could actually do without this, but I'm keeping it for now for speedup
+    pathToLogTable : we could actually do without this, but I'm keeping it for now for speedup
+    pathToExponentTable : we could actually do without this, but I'm keeping it for now for speedup
     
+    """
+    
+    @property
+    def polynomialName(self):
+        raise NotImplementedError
+    lengthInBits = len(polynomialName) - 1
+
+    @property
+    def pathToInverseTable(self):
+        raise NotImplementedError
+    
+    @property
+    def pathToLogTable(self):
+        raise NotImplementedError
+    
+    @property
+    def pathToExponentTable(self):
+        raise NotImplementedError
+    
+    @property
+    def pathToTimesTable(self):
+        raise NotImplementedError
+    
+    inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()  
+    exponentTable = np.load(pathToExponentTable, allow_pickle = True).item()
+    logTable = np.load(pathToLogTable, allow_pickle = True).item()
+    if pathToTimesTable is not None:
+        timesTable = np.load(pathToTimesTable, allow_pickle = True).item()
+    
+    # It is assumed that the polynomial used in the child class is one of the named constant polynomials at the top of this file
+    generatorPolynomial = polynomial(polynomialName)
+    
+    def __init__(self, value):
+        if hasattr(value, '__len__'):
+            if len(value) == self.lengthInBits:
+                super().__init__(coefficients = value)
+            else:
+                print("Class of provided value is " + str(value.__class__))
+                raise(f"An element in GF({2 ** self.lengthInBits}) is a {self.lengthInBits}-tuple of binary values. Please avoid ambiguity by stating all {self.lengthInBits} coefficients. ")
+        elif np.isscalar(value) and (value == 0 or value == 1):
+            coefficients = np.zeros(self.lengthInBits, IEEE_BINARY_DTYPE)
+            coefficients[-1] = value
+            # WARNING ! make sure polynomial is the first class in the inheritance list
+            super().__init__(coefficients = coefficients)
+        else:
+            raise(f"Class of provided value is {value.__class__}. An element in GF({2 ** self.lengthInBits} is a {self.lengthInBits}-tuple of binary values. Please avoid ambiguity by stating all {self.lengthInBits} coefficients.")
+    
+    def mul(self, other):        
+        tempResult = self.times(other)
+        tempResult = tempResult.modulu(self.generatorPolynomial)
+        result = self.__class__(value = tempResult.coefficients)
+        return result
         
+    def inverse(self):
+        return self.__class__(self.inverseTable[str(self.getValue())])
+        
+    def __mul__(self, other):
+        return self.__class__(self.timesTable["".join(str(e) for e in self.getValue())]["".join(str(c) for c in other.getValue())])
     
+    def binaryMul(self, other):
+        if other.value == 0:
+            return self.__class__(value = 0)
+        else:
+            return self.__class__(value = self.coefficients)
+    
+    def getValue(self):
+        return self.coefficients
+    
+    def plus(self, other):
+        coefficients = (self.coefficients + other.coefficients) %2
+        return self.__class__(coefficients)
+    
+    def __div__(self, other):
+        return self.mul(other.inverse())
+    
+    def __truediv__(self, other):
+        return self * other.inverse()
+
+    def __add__(self, other):
+        return self.plus(other)
+     
+    def __sub__(self, other):
+        return self.minus(other)
+      
+    def __eq__(self, other):
+        result = False
+        if other.__class__ == self.__class__:
+            result = (np.all(other.getValue() == self.getValue()))
+        elif other == 0:
+            result = np.all(self.getValue() == 0)
+        elif other == 1:
+            result = (np.all(self.getValue()[0 : -1] == 0) and (self.getValue()[-1] == 1))
+        else:
+            raise
+        return result
+     
+    def __ne__(self, other):
+        return (not (self == other))
+    
+    def getLog(self):
+        if self == 0 :
+            raise ValueError('Log is not defined for 0')
+        else:
+            key = ''.join(map(str, self.coefficients))
+        return self.logTable[key]
