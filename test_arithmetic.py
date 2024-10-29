@@ -150,8 +150,10 @@ def test_noZeroDivision():
     #eD, _ =  generateExponentAndLogTables()
     eD = gf128.exponentTable
     for combination in combinations(range(len(eD.keys())), 2):
-        print(combination)
         assert ((gf128(eD[combination[0]]) * gf128(eD[combination[1]])) != 0)
+    eD = gf256.exponentTable
+    for combination in combinations(range(len(eD.keys())), 2):
+        assert ((gf256(eD[combination[0]]) * gf256(eD[combination[1]])) != 0)
     #return 'OK'
 
 def test_plusCommutativity():
@@ -280,8 +282,33 @@ def test_moduluOverLargerFields():
     parityX = messageX.modulu(generatorX)
     temp = generatorX.ignoreFromDegree(parityLength + 1)
     assert(parityX == temp)
+
+def test_gf256Multiplication():
+    wan = gf256(1)
+    keys = wan.timesTable.keys()
+    for lhs in keys:
+        for rhs in keys:
+            c = gf256([int(t) for t in lhs])
+            d = gf256([int(h) for h in rhs])
+            e = c.mul(d)
+            for b in e.coefficients:
+                assert(b == 0 or b == 1)
     
+def test_reproduceGf256MulBug():
+    c = gf256([0, 0, 0, 1, 1, 1, 0, 1])
+    d = gf256([0, 0, 0, 0, 0, 0, 1, 1])
+    e = c.mul(d)
     
+    for t in e.coefficients:
+        assert(t == 0 or t == 1)
+
+def test_comparisonGf128():
+    c = gf128([0, 0, 1, 1, 1, 0, 1])
+    d = gf128([0, 0, 0, 0, 0, 1, 1])
+    e = c.mul(d)
+    
+    for t in e.coefficients:
+        assert(t == 0 or t == 1)
 # def test_reproduceModuluBug():
 #     # This was not a bug, but a faulty test !
 #     # This test originated from another test where the leading coefficient of the message
@@ -330,7 +357,26 @@ def test_multiplicationModuluBug():
     eD = gf128.exponentTable
     assert ((gf128(eD[5]) * gf128(eD[6])) != 0)
     #return 'OK'
+    
+def test_timesScalarBugReproduction():
+    gfScalar = gf256([0, 0, 1, 1, 1, 1, 1, 0])
+    coefficients = list(map(gf256, [[0,0, 0, 0, 0, 1, 1, 1], [0, 1, 0, 0, 1, 0, 0, 1], [1, 1, 1, 0, 1,0, 0, 0], [0, 1, 1, 1, 0, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 1]]))
+    pX = polynomial(coefficients)
+    hX = pX.timesScalar(gfScalar)
+    
+    for c in hX.coefficients:
+        for b in c.coefficients:
+            assert (b == 0 or b == 1)
 
+def test_gf256MultiplicationTable():
+    wan = gf256(1)
+    keys = wan.timesTable.keys()
+    for lhs in keys:
+        for rhs in keys:
+            for b in wan.timesTable[lhs][rhs]:
+                assert(b == 0 or b == 1)
+                
+            
 if __name__ == "__main__":
     #test_multiplicationModuluBug()
     #test_lift()
@@ -350,5 +396,10 @@ if __name__ == "__main__":
     #test_gf256CacheedMultiplication()
     #test_moduluOverLargerFields()
     #test_polynomialTimesOverLargerFields()
-    test_reproduceModuluBug()
-    #pass
+    #test_gf256MultiplicationTable()
+    #test_gf256Multiplication()
+    #test_comparisonGf128()
+    #test_reproduceGf256MulBug()
+    #test_timesScalarBugReproduction()
+    #test_reproduceModuluBug()
+    pass

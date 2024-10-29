@@ -13,6 +13,7 @@ sys.path.insert(0, reedSolomonProjectDir)
 import numpy as np
 import copy
 from abc import ABC, abstractmethod
+
 """
 This file contains some ad-hoc arithmetic over the binary field.
 """
@@ -112,7 +113,7 @@ class polynomial():
         #         for i in range(len(coefficients)):
         #             newCoefficients.append(binaryFieldElement(coefficients[i]))
         #     else:
-        #         raise('Çoefficients must be finite field elements or scalalrs')    
+        #         raise('Coefficients must be finite field elements or scalalrs')    
         # self.coefficients = newCoefficients
 
     def isZero(self):
@@ -222,7 +223,6 @@ class polynomial():
         newCoefficients = copy.deepcopy(self.coefficients)
         for j in range(len(self.coefficients)):
             newCoefficients[j] = newCoefficients[j] * gfScalar
-        
         return polynomial(newCoefficients)
     
     def symbolicTimesScalar(self, string):
@@ -240,7 +240,9 @@ class polynomial():
             temp = polynomial(self.coefficients)
             temp.lift(length - 1 - i)
             temp = temp.timesScalar(fieldElement)    
+            print(f"result is {result.coefficients} and temp is {temp.coefficients}")
             result = result.plus(temp)
+            print(f"After adding them the result is: {result.coefficients}")
             i = i + 1
         return result
 
@@ -454,6 +456,7 @@ class gf128(polynomial):
             raise("Class of provided value is " + str(value.__class__) + "An element in GF(128) is a 7-tuple of binary values. Please avoid ambiguity by stating all 7 coefficients.")
     
     def mul(self, other):
+        ########### GF128 mul
         tempResult = self.times(other)
         tempResult.coefficients = tempResult.coefficients %2
         # Omer Sella: note that there was a choice of polynomila here, namely: p(x) = x^7 + x^3 + 1
@@ -623,22 +626,20 @@ class gf256(polynomial):
             raise("Class of provided value is " + str(value.__class__) + "An element in GF(256) is a 8-tuple of binary values. Please avoid ambiguity by stating all 8 coefficients.")
     
     def mul(self, other):
-        
+        ########### GF256 mul
         tempResult = self.times(other)
-        tempResult = tempResult.modulu(self.generatorPolynomial)#polynomial(coefficients = [1,0,0,0,1,1,1,0,1])) #x^8 + x^4 + x^3 + x^2 + 1 from Todd K. Moon page 243, example 6.9
+        tempResult.coefficients = tempResult.coefficients %2
+        tempResult = tempResult.modulu(self.generatorPolynomial)
         result = self.__class__(value = tempResult.coefficients)
         return result
         
     def inverse(self):
-        return self.__class__(self.inverseTable[str(self.getValue())]) #"".join(str(e) for e in self.getValue())])
-        #if self.inverseTable is not None:   
-        #else:
-            # Omer Sella: consider a verilog oriented implementation here, could be slow to run on a CPU but better than not working.
-        #    raise
+        return self.__class__(self.inverseTable[str(self.getValue())]) 
+
     
     def __mul__(self, other):
-        
-        return self.__class__(self.timesTable["".join(str(e) for e in self.getValue())]["".join(str(c) for c in other.getValue())])
+        answer = self.__class__(self.timesTable["".join(str(e) for e in self.getValue())]["".join(str(c) for c in other.getValue())])
+        return 
     
     def binaryMul(self, other):
         if other.value == 0:
@@ -664,8 +665,6 @@ class gf256(polynomial):
      
     def __sub__(self, other):
         return self.minus(other)
-     
-    
      
     def __eq__(self, other):
         result = False
@@ -700,10 +699,18 @@ class gfBase(polynomial, ABC):
     
     """
     
+    
+    
     @property
+    @abstractmethod
     def polynomialName(self):
         raise NotImplementedError
-    lengthInBits = len(polynomialName) - 1
+    
+    @property
+    @abstractmethod
+    def lengthInBits(self):
+        # Needs to be len(polynomialName)
+        raise NotImplementedError    
 
     @property
     def pathToInverseTable(self):
@@ -720,16 +727,17 @@ class gfBase(polynomial, ABC):
     @property
     def pathToTimesTable(self):
         raise NotImplementedError
-    
-    inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()  
-    exponentTable = np.load(pathToExponentTable, allow_pickle = True).item()
-    logTable = np.load(pathToLogTable, allow_pickle = True).item()
-    if pathToTimesTable is not None:
-        timesTable = np.load(pathToTimesTable, allow_pickle = True).item()
+       
+    #inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()  
+    #exponentTable = np.load(pathToExponentTable, allow_pickle = True).item()
+    #logTable = np.load(pathToLogTable, allow_pickle = True).item()
+    #if pathToTimesTable is not None:
+    #    timesTable = np.load(pathToTimesTable, allow_pickle = True).item()
     
     # It is assumed that the polynomial used in the child class is one of the named constant polynomials at the top of this file
-    generatorPolynomial = polynomial(polynomialName)
+    #generatorPolynomial = polynomial(polynomialName)
     
+    @classmethod
     def __init__(self, value):
         if hasattr(value, '__len__'):
             if len(value) == self.lengthInBits:
@@ -745,43 +753,54 @@ class gfBase(polynomial, ABC):
         else:
             raise(f"Class of provided value is {value.__class__}. An element in GF({2 ** self.lengthInBits} is a {self.lengthInBits}-tuple of binary values. Please avoid ambiguity by stating all {self.lengthInBits} coefficients.")
     
+    @classmethod
     def mul(self, other):        
         tempResult = self.times(other)
         tempResult = tempResult.modulu(self.generatorPolynomial)
         result = self.__class__(value = tempResult.coefficients)
         return result
-        
+    
+    @classmethod    
     def inverse(self):
         return self.__class__(self.inverseTable[str(self.getValue())])
-        
+    
+    @classmethod
     def __mul__(self, other):
         return self.__class__(self.timesTable["".join(str(e) for e in self.getValue())]["".join(str(c) for c in other.getValue())])
     
+    @classmethod
     def binaryMul(self, other):
         if other.value == 0:
             return self.__class__(value = 0)
         else:
             return self.__class__(value = self.coefficients)
     
+    @classmethod
     def getValue(self):
         return self.coefficients
     
+    @classmethod
     def plus(self, other):
         coefficients = (self.coefficients + other.coefficients) %2
         return self.__class__(coefficients)
     
+    @classmethod
     def __div__(self, other):
         return self.mul(other.inverse())
     
+    @classmethod
     def __truediv__(self, other):
         return self * other.inverse()
 
+    @classmethod
     def __add__(self, other):
         return self.plus(other)
      
+    @classmethod
     def __sub__(self, other):
         return self.minus(other)
       
+    @classmethod
     def __eq__(self, other):
         result = False
         if other.__class__ == self.__class__:
@@ -794,9 +813,11 @@ class gfBase(polynomial, ABC):
             raise
         return result
      
+    @classmethod
     def __ne__(self, other):
         return (not (self == other))
     
+    @classmethod
     def getLog(self):
         if self == 0 :
             raise ValueError('Log is not defined for 0')

@@ -38,14 +38,25 @@ def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
              l = l + 1
          else:
              if (2 * L) >= K: #Note the fix k replaced with K
-                 hX = pX.timesScalar(discrepancy.times(oldDiscrepancy.inverse()))
+                 scalar = discrepancy.times(oldDiscrepancy.inverse())
+                 print(f"{scalar.getValue()}")
+                 hX = pX.timesScalar(scalar)
                  hX.lift(l)
+                 print(f"hX is:")
+                 hX.printValues()
                  cX = cX - hX
                  l = l + 1
              else:
                  tX = cX
-                 hX = pX.timesScalar(discrepancy.times(oldDiscrepancy.inverse()))
+                 # BUG ! discrepancy is gf element, as is oldDiscrepancy.inverse(), but .times() is not a method of gf element (it is a method of polynomial)
+                 # Right now the fix is to switch to * instead of .times()
+                 #hX = pX.timesScalar(discrepancy.times(oldDiscrepancy.inverse()))
+                 scalar = discrepancy * oldDiscrepancy.inverse()
+                 print(f"{scalar.getValue()}")
+                 hX = pX.timesScalar(scalar)
                  hX.lift(l)
+                 print(f"hX is:")
+                 hX.printValues()
                  cX = cX - hX
                  L = K - L
                  pX = tX
