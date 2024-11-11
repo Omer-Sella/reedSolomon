@@ -14,6 +14,7 @@ import numpy as np
 import copy
 from abc import ABC, abstractmethod
 
+
 """
 This file contains some ad-hoc arithmetic over the binary field.
 """
@@ -240,9 +241,9 @@ class polynomial():
             temp = polynomial(self.coefficients)
             temp.lift(length - 1 - i)
             temp = temp.timesScalar(fieldElement)    
-            print(f"result is {result.coefficients} and temp is {temp.coefficients}")
+            #print(f"result is {result.coefficients} and temp is {temp.coefficients}")
             result = result.plus(temp)
-            print(f"After adding them the result is: {result.coefficients}")
+            #print(f"After adding them the result is: {result.coefficients}")
             i = i + 1
         return result
 
@@ -426,6 +427,206 @@ class polynomial():
                 string += (" " + str(self.coefficients[power].getValue()) + "*X^" + str(len(self.coefficients) - power - 1))
         print(string)
             
+
+class gfBase(polynomial, ABC):
+    """
+    A common API for all manifestations of galois fields over the binary field.
+    The user must specify:
+    polynomialName : one of the constants representing polynomials at the top of this file.
+    pathToInverseTable : we could actually do without this, but I'm keeping it for now for speedup
+    pathToLogTable : we could actually do without this, but I'm keeping it for now for speedup
+    pathToExponentTable : we could actually do without this, but I'm keeping it for now for speedup
+    
+    """
+    
+    @property
+    @abstractmethod
+    def polynomialName(self):
+        raise NotImplementedError
+    
+    @property
+    @abstractmethod
+    def lengthInBits(self):
+        # Needs to be len(polynomialName)
+        raise NotImplementedError    
+    
+    @property
+    @abstractmethod
+    def pathToInverseTable(self):
+        raise NotImplementedError
+    
+    @property
+    @abstractmethod
+    def pathToLogTable(self):
+        raise NotImplementedError
+    
+    @property
+    @abstractmethod
+    def pathToExponentTable(self):
+        raise NotImplementedError
+    
+    @property
+    @abstractmethod
+    def pathToTimesTable(self):
+        pass
+    
+    @property
+    @classmethod
+    def inverseTable(cls):
+        return np.load(cls.pathToInverseTable, allow_pickle = True).item()  
+        
+    
+    @property
+    @classmethod
+    def exponentTable(cls):
+        return np.load(cls.pathToExponentTable, allow_pickle = True).item()
+    
+    @property
+    @classmethod
+    def logTable(cls):
+        return np.load(cls.pathToLogTable, allow_pickle = True).item()
+    
+    @property
+    @classmethod
+    def timesTable(cls):
+        if cls.pathToTimesTable is not None:
+            return np.load(cls.pathToTimesTable, allow_pickle = True).item()
+        else:
+            return None
+    
+    # It is assumed that the polynomial used in the child class is one of the named constant polynomials at the top of this file
+    @property
+    @classmethod
+    def loadGeneratorPolynomial(cls):
+        cls.generatorPolynomial = polynomial(cls.polynomialName)
+    
+    
+    def __init__(self, value):
+        
+        if hasattr(value, '__len__'):
+            if len(value) == self.lengthInBits:
+                super().__init__(coefficients = value)
+            else:
+                #print("Class of provided value is " + str(value.__class__))
+                raise(f"An element in GF({2 ** self.lengthInBits}) is a {self.lengthInBits}-tuple of binary values. Please avoid ambiguity by stating all {self.lengthInBits} coefficients. ")
+        elif np.isscalar(value) and (value == 0 or value == 1):
+            coefficients = np.zeros(self.lengthInBits, IEEE_BINARY_DTYPE)
+            coefficients[-1] = value
+            # WARNING ! make sure polynomial is the first class in the inheritance list
+            super().__init__(coefficients = coefficients)
+        else:
+            raise(f"Class of provided value is {value.__class__}. An element in GF({2 ** self.lengthInBits} is a {self.lengthInBits}-tuple of binary values. Please avoid ambiguity by stating all {self.lengthInBits} coefficients.")
+    
+    def mul(self, other):        
+        tempResult = self.times(other)
+        tempResult = tempResult.modulu(self.generatorPolynomial)
+        result = self.__class__(value = tempResult.coefficients)
+        return result
+    
+    def inverse(self):
+        return self.__class__(self.inverseTable[str(self.getValue())])
+    
+    def __mul__(self, other):
+        return self.__class__(self.timesTable["".join(str(e) for e in self.getValue())]["".join(str(c) for c in other.getValue())])
+    
+    def binaryMul(self, other):
+        if other.value == 0:
+            return self.__class__(value = 0)
+        else:
+            return self.__class__(value = self.coefficients)
+    
+    def getValue(self):
+        return self.coefficients
+    
+    def plus(self, other):
+        coefficients = (self.coefficients + other.coefficients) %2
+        return self.__class__(coefficients)
+    
+    def __div__(self, other):
+        return self.mul(other.inverse())
+    
+    def __truediv__(self, other):
+        return self * other.inverse()
+
+    def __add__(self, other):
+        return self.plus(other)
+     
+    def __sub__(self, other):
+        return self.minus(other)
+      
+    def __eq__(self, other):
+        result = False
+        if other.__class__ == self.__class__:
+            result = (np.all(other.getValue() == self.getValue()))
+        elif other == 0:
+            result = np.all(self.getValue() == 0)
+        elif other == 1:
+            result = (np.all(self.getValue()[0 : -1] == 0) and (self.getValue()[-1] == 1))
+        else:
+            raise
+        return result
+     
+    def __ne__(self, other):
+        return (not (self == other))
+    
+    def getLog(self):
+        if self == 0 :
+            raise ValueError('Log is not defined for 0')
+        else:
+            key = ''.join(map(str, self.coefficients))
+        return self.logTable[key]
+    
+class gf256Generic(gfBase):
+    @property
+    def polynomialName(self):
+        return G_8_0
+    @property
+    def lengthInBits(self):
+        return 8
+        
+    @property
+    def pathToInverseTable(self):
+        return reedSolomonProjectDir + "/cachedArithmetic/gf256Inverse_G_8_0.npy"
+        
+    @property
+    def pathToExponentTable(self):
+        return reedSolomonProjectDir + "/cachedArithmetic/gf256Exponent_G_8_0.npy"
+        
+    @property
+    def pathToLogTable(self):
+        return reedSolomonProjectDir + "/cachedArithmetic/gf256Log_G_8_0.npy"
+        
+    @property
+    def pathToTimesTable(self):
+        return reedSolomonProjectDir + "/cachedArithmetic/gf256TimesTable_G_8_0.npy"
+        
+        
+        
+class gf128Generic(gfBase):
+    super
+    def polynomialName(self):
+        return G_7_1
+    @property
+    def lengthInBits(self):
+        return 7
+        
+    @property
+    def pathToInverseTable(self):
+        return reedSolomonProjectDir + "/cachedArithmetic/gf128Inverse.npy"
+        
+    @property
+    def pathToExponentTable(self):
+        return reedSolomonProjectDir + "/cachedArithmetic/gf128Exponent.npy"
+        
+    @property
+    def pathToLogTable(self):
+        return reedSolomonProjectDir + "/cachedArithmetic/gf128Log.npy"
+        
+    @property
+    def pathToTimesTable(self):
+        return None
+
+
 class gf128(polynomial):
     """
     Ad-hoc implementation of gf128 arithmetic, since this arithmetic class has several possible specific optimizations 
@@ -522,6 +723,124 @@ class gf128(polynomial):
         return self.logTable[key]
 
 
+class gf256(polynomial):
+    
+    polynomialName = "G_8_0"
+    pathToInverseTable = reedSolomonProjectDir + "/cachedArithmetic/gf256Inverse_" + polynomialName + ".npy"
+    pathToLogTable = reedSolomonProjectDir + "/cachedArithmetic/gf256Log_" + polynomialName + ".npy"
+    pathToExponentTable = reedSolomonProjectDir + "/cachedArithmetic/gf256Exponent_"+ polynomialName + ".npy"
+    inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()  
+    exponentTable = np.load(pathToExponentTable, allow_pickle = True).item()
+    logTable = np.load(pathToLogTable, allow_pickle = True).item()
+    pathToTimesTable = reedSolomonProjectDir + "/cachedArithmetic/gf256TimesTable_" + polynomialName + ".npy"
+    timesTable = np.load(pathToTimesTable, allow_pickle = True).item()
+    # Irreducible polynomials from https://www.partow.net/programming/polynomials/index.html#deg08
+    #In 177-1 it seems like they used the polynomial x^8 + x^7 + 0 + x^5 + x^4 + 0 + 0 + x + 1 which is not irreducible / primitive 
+    generatorPolynomial = polynomial(G_8_0)
+    def __init__(self, value):
+        if hasattr(value, '__len__'):
+            if len(value) == 8:
+                super().__init__(coefficients = value)
+            else:
+                print("Class of provided value is " + str(value.__class__))
+                raise("An element in GF(256) is a 8-tuple of binary values. Please avoid ambiguity by stating all 8 coefficients. ")
+        elif np.isscalar(value) and (value == 0 or value == 1):
+            coefficients = np.zeros(8, IEEE_BINARY_DTYPE)
+            coefficients[-1] = value
+            super().__init__(coefficients = coefficients)
+        else:
+            raise("Class of provided value is " + str(value.__class__) + "An element in GF(256) is a 8-tuple of binary values. Please avoid ambiguity by stating all 8 coefficients.")
+    
+    def mul(self, other):
+        ########### GF256 mul
+        tempResult = self.times(other)
+        tempResult.coefficients = tempResult.coefficients %2
+        tempResult = tempResult.modulu(self.generatorPolynomial)
+        result = self.__class__(value = tempResult.coefficients)
+        return result
+        
+    def inverse(self):
+        return self.__class__(self.inverseTable[str(self.getValue())]) 
+
+    
+    def __mul__(self, other):
+        answer = self.__class__(self.timesTable["".join(str(e) for e in self.getValue())]["".join(str(c) for c in other.getValue())])
+        return answer
+    
+    def binaryMul(self, other):
+        if other.value == 0:
+            return self.__class__(value = 0)
+        else:
+            return self.__class__(value = self.coefficients)
+    
+    def getValue(self):
+        return self.coefficients
+    
+    def plus(self, other):
+        coefficients = (self.coefficients + other.coefficients) %2
+        return self.__class__(coefficients)
+    
+    def __div__(self, other):
+        return self.mul(other.inverse())
+    
+    def __truediv__(self, other):
+        return self * other.inverse()
+
+    def __add__(self, other):
+        return self.plus(other)
+     
+    def __sub__(self, other):
+        return self.minus(other)
+     
+    def __eq__(self, other):
+        result = False
+        if other.__class__ == self.__class__:
+            result = (np.all(other.getValue() == self.getValue()))
+        elif other == 0:
+            result = np.all(self.getValue() == 0)
+        elif other == 1:
+            result = (np.all(self.getValue()[0 : -1] == 0) and (self.getValue()[-1] == 1))
+        else:
+            raise
+        return result
+     
+    def __ne__(self, other):
+        return (not (self == other))
+    
+    def getLog(self):
+        if self == 0 :
+            raise ValueError('Log is not defined for 0')
+        else:
+            key = ''.join(map(str, self.coefficients))
+        return self.logTable[key]
+
+
+def generateTimesTable(gfType = gf128, generatorAsList = [0,0,0,0,0,1,0]):
+    a = gfType(generatorAsList)
+    b = gfType(generatorAsList)
+    generator = gfType(generatorAsList)
+    timesTable = dict()
+    zro = gfType([0] * len(generatorAsList))
+    # Populate zero times b and b times zero
+    timesTable["".join(str(c) for c in zro.getValue())] = dict()
+    timesTable["".join(str(c) for c in zro.getValue())]["".join(str(e) for e in zro.getValue())] = zro.getValue()
+    for i in range(2 ** len(generatorAsList) - 1):        
+        timesTable["".join(str(c) for c in zro.getValue())]["".join(str(e) for e in b.getValue())] = zro.getValue()
+        timesTable["".join(str(c) for c in b.getValue())] = dict()
+        timesTable["".join(str(c) for c in b.getValue())]["".join(str(e) for e in zro.getValue())] = zro.getValue()
+        b = b.mul(generator)
+    # Reset b
+    b = gfType(generatorAsList)
+    for i in range(2 ** len(generatorAsList) - 1):
+        for j in range(2 ** len(generatorAsList) - 1):
+            result = a.mul(b)
+            timesTable["".join(str(e) for e in a.getValue())]["".join(str(ee) for ee in b.getValue())]  = result.getValue()
+            #for coefficient in result.coefficients:
+                #assert(coefficient == 0 or coefficient == 1)
+            b = b.mul(generator)
+        a = a.mul(generator)
+    return timesTable
+
 def generateExponentAndLogTables(gfType = gf128, generatorAsList = [0,0,0,0,0,1,0]):
     exponentTable={}
     logarithmTable={}
@@ -570,257 +889,3 @@ def generateInverseTable(gfType = gf128, generatorAsList = [0,0,0,0,0,1,0]):
             temp = temp * b
         inverseDictionary[key] = temp.getValue()
     return inverseDictionary
-
-def generateTimesTable(gfType = gf128, generatorAsList = [0,0,0,0,0,1,0]):
-    a = gfType(generatorAsList)
-    b = gfType(generatorAsList)
-    generator = gfType(generatorAsList)
-    timesTable = dict()
-    zro = gfType([0] * len(generatorAsList))
-    # Populate zero times b and b times zero
-    timesTable["".join(str(c) for c in zro.getValue())] = dict()
-    timesTable["".join(str(c) for c in zro.getValue())]["".join(str(e) for e in zro.getValue())] = zro.getValue()
-    for i in range(2 ** len(generatorAsList) - 1):        
-        timesTable["".join(str(c) for c in zro.getValue())]["".join(str(e) for e in b.getValue())] = zro.getValue()
-        timesTable["".join(str(c) for c in b.getValue())] = dict()
-        timesTable["".join(str(c) for c in b.getValue())]["".join(str(e) for e in zro.getValue())] = zro.getValue()
-        b = b.mul(generator)
-    # Reset b
-    b = gfType(generatorAsList)
-    for i in range(2 ** len(generatorAsList) - 1):
-        for j in range(2 ** len(generatorAsList) - 1):
-            timesTable["".join(str(e) for e in a.getValue())]["".join(str(ee) for ee in b.getValue())]  = a.mul(b).getValue()
-            b = b.mul(generator)
-        a = a.mul(generator)
-    return timesTable
-
-
-class gf256(polynomial):
-    """
-    This is a step towards a generic gf(M) implementation
-    """
-    polynomialName = "G_8_0"
-    pathToInverseTable = reedSolomonProjectDir + "/cachedArithmetic/gf256Inverse_" + polynomialName + ".npy"
-    pathToLogTable = reedSolomonProjectDir + "/cachedArithmetic/gf256Log_" + polynomialName + ".npy"
-    pathToExponentTable = reedSolomonProjectDir + "/cachedArithmetic/gf256Exponent_"+ polynomialName + ".npy"
-    inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()  
-    exponentTable = np.load(pathToExponentTable, allow_pickle = True).item()
-    logTable = np.load(pathToLogTable, allow_pickle = True).item()
-    pathToTimesTable = reedSolomonProjectDir + "/cachedArithmetic/gf256TimesTable_" + polynomialName + ".npy"
-    timesTable = np.load(pathToTimesTable, allow_pickle = True).item()
-    # Irreducible polynomials from https://www.partow.net/programming/polynomials/index.html#deg08
-    #In 177-1 it seems like they used the polynomial x^8 + x^7 + 0 + x^5 + x^4 + 0 + 0 + x + 1 which is not irreducible / primitive 
-    generatorPolynomial = polynomial(G_8_0)
-    def __init__(self, value):
-        if hasattr(value, '__len__'):
-            if len(value) == 8:
-                super().__init__(coefficients = value)
-            else:
-                print("Class of provided value is " + str(value.__class__))
-                raise("An element in GF(256) is a 8-tuple of binary values. Please avoid ambiguity by stating all 8 coefficients. ")
-        elif np.isscalar(value) and (value == 0 or value == 1):
-            coefficients = np.zeros(8, IEEE_BINARY_DTYPE)
-            coefficients[-1] = value
-            super().__init__(coefficients = coefficients)
-        else:
-            raise("Class of provided value is " + str(value.__class__) + "An element in GF(256) is a 8-tuple of binary values. Please avoid ambiguity by stating all 8 coefficients.")
-    
-    def mul(self, other):
-        ########### GF256 mul
-        tempResult = self.times(other)
-        tempResult.coefficients = tempResult.coefficients %2
-        tempResult = tempResult.modulu(self.generatorPolynomial)
-        result = self.__class__(value = tempResult.coefficients)
-        return result
-        
-    def inverse(self):
-        return self.__class__(self.inverseTable[str(self.getValue())]) 
-
-    
-    def __mul__(self, other):
-        answer = self.__class__(self.timesTable["".join(str(e) for e in self.getValue())]["".join(str(c) for c in other.getValue())])
-        return 
-    
-    def binaryMul(self, other):
-        if other.value == 0:
-            return self.__class__(value = 0)
-        else:
-            return self.__class__(value = self.coefficients)
-    
-    def getValue(self):
-        return self.coefficients
-    
-    def plus(self, other):
-        coefficients = (self.coefficients + other.coefficients) %2
-        return self.__class__(coefficients)
-    
-    def __div__(self, other):
-        return self.mul(other.inverse())
-    
-    def __truediv__(self, other):
-        return self * other.inverse()
-
-    def __add__(self, other):
-        return self.plus(other)
-     
-    def __sub__(self, other):
-        return self.minus(other)
-     
-    def __eq__(self, other):
-        result = False
-        if other.__class__ == self.__class__:
-            result = (np.all(other.getValue() == self.getValue()))
-        elif other == 0:
-            result = np.all(self.getValue() == 0)
-        elif other == 1:
-            result = (np.all(self.getValue()[0 : -1] == 0) and (self.getValue()[-1] == 1))
-        else:
-            raise
-        return result
-     
-    def __ne__(self, other):
-        return (not (self == other))
-    
-    def getLog(self):
-        if self == 0 :
-            raise ValueError('Log is not defined for 0')
-        else:
-            key = ''.join(map(str, self.coefficients))
-        return self.logTable[key]
-
-class gfBase(polynomial, ABC):
-    """
-    A common API for all manifestations of galois fields over the binary field.
-    The user must specify:
-    polynomialName : one of the constants representing polynomials at the top of this file.
-    pathToInverseTable : we could actually do without this, but I'm keeping it for now for speedup
-    pathToLogTable : we could actually do without this, but I'm keeping it for now for speedup
-    pathToExponentTable : we could actually do without this, but I'm keeping it for now for speedup
-    
-    """
-    
-    
-    
-    @property
-    @abstractmethod
-    def polynomialName(self):
-        raise NotImplementedError
-    
-    @property
-    @abstractmethod
-    def lengthInBits(self):
-        # Needs to be len(polynomialName)
-        raise NotImplementedError    
-
-    @property
-    def pathToInverseTable(self):
-        raise NotImplementedError
-    
-    @property
-    def pathToLogTable(self):
-        raise NotImplementedError
-    
-    @property
-    def pathToExponentTable(self):
-        raise NotImplementedError
-    
-    @property
-    def pathToTimesTable(self):
-        raise NotImplementedError
-       
-    #inverseTable = np.load(pathToInverseTable, allow_pickle = True).item()  
-    #exponentTable = np.load(pathToExponentTable, allow_pickle = True).item()
-    #logTable = np.load(pathToLogTable, allow_pickle = True).item()
-    #if pathToTimesTable is not None:
-    #    timesTable = np.load(pathToTimesTable, allow_pickle = True).item()
-    
-    # It is assumed that the polynomial used in the child class is one of the named constant polynomials at the top of this file
-    #generatorPolynomial = polynomial(polynomialName)
-    
-    @classmethod
-    def __init__(self, value):
-        if hasattr(value, '__len__'):
-            if len(value) == self.lengthInBits:
-                super().__init__(coefficients = value)
-            else:
-                print("Class of provided value is " + str(value.__class__))
-                raise(f"An element in GF({2 ** self.lengthInBits}) is a {self.lengthInBits}-tuple of binary values. Please avoid ambiguity by stating all {self.lengthInBits} coefficients. ")
-        elif np.isscalar(value) and (value == 0 or value == 1):
-            coefficients = np.zeros(self.lengthInBits, IEEE_BINARY_DTYPE)
-            coefficients[-1] = value
-            # WARNING ! make sure polynomial is the first class in the inheritance list
-            super().__init__(coefficients = coefficients)
-        else:
-            raise(f"Class of provided value is {value.__class__}. An element in GF({2 ** self.lengthInBits} is a {self.lengthInBits}-tuple of binary values. Please avoid ambiguity by stating all {self.lengthInBits} coefficients.")
-    
-    @classmethod
-    def mul(self, other):        
-        tempResult = self.times(other)
-        tempResult = tempResult.modulu(self.generatorPolynomial)
-        result = self.__class__(value = tempResult.coefficients)
-        return result
-    
-    @classmethod    
-    def inverse(self):
-        return self.__class__(self.inverseTable[str(self.getValue())])
-    
-    @classmethod
-    def __mul__(self, other):
-        return self.__class__(self.timesTable["".join(str(e) for e in self.getValue())]["".join(str(c) for c in other.getValue())])
-    
-    @classmethod
-    def binaryMul(self, other):
-        if other.value == 0:
-            return self.__class__(value = 0)
-        else:
-            return self.__class__(value = self.coefficients)
-    
-    @classmethod
-    def getValue(self):
-        return self.coefficients
-    
-    @classmethod
-    def plus(self, other):
-        coefficients = (self.coefficients + other.coefficients) %2
-        return self.__class__(coefficients)
-    
-    @classmethod
-    def __div__(self, other):
-        return self.mul(other.inverse())
-    
-    @classmethod
-    def __truediv__(self, other):
-        return self * other.inverse()
-
-    @classmethod
-    def __add__(self, other):
-        return self.plus(other)
-     
-    @classmethod
-    def __sub__(self, other):
-        return self.minus(other)
-      
-    @classmethod
-    def __eq__(self, other):
-        result = False
-        if other.__class__ == self.__class__:
-            result = (np.all(other.getValue() == self.getValue()))
-        elif other == 0:
-            result = np.all(self.getValue() == 0)
-        elif other == 1:
-            result = (np.all(self.getValue()[0 : -1] == 0) and (self.getValue()[-1] == 1))
-        else:
-            raise
-        return result
-     
-    @classmethod
-    def __ne__(self, other):
-        return (not (self == other))
-    
-    @classmethod
-    def getLog(self):
-        if self == 0 :
-            raise ValueError('Log is not defined for 0')
-        else:
-            key = ''.join(map(str, self.coefficients))
-        return self.logTable[key]

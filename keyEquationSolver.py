@@ -39,10 +39,10 @@ def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
          else:
              if (2 * L) >= K: #Note the fix k replaced with K
                  scalar = discrepancy.times(oldDiscrepancy.inverse())
-                 print(f"{scalar.getValue()}")
+                 #print(f"{scalar.coefficients}")
                  hX = pX.timesScalar(scalar)
                  hX.lift(l)
-                 print(f"hX is:")
+                 #print(f"hX is:")
                  hX.printValues()
                  cX = cX - hX
                  l = l + 1
@@ -52,10 +52,10 @@ def keyEquationSolver(polynomialClass, galoisElementClass, syndromes):
                  # Right now the fix is to switch to * instead of .times()
                  #hX = pX.timesScalar(discrepancy.times(oldDiscrepancy.inverse()))
                  scalar = discrepancy * oldDiscrepancy.inverse()
-                 print(f"{scalar.getValue()}")
+                 #print(f"{scalar.coefficients}")
                  hX = pX.timesScalar(scalar)
                  hX.lift(l)
-                 print(f"hX is:")
+                 #print(f"hX is:")
                  hX.printValues()
                  cX = cX - hX
                  L = K - L

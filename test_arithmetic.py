@@ -259,7 +259,7 @@ def test_gf256CachedMultiplication():
             rhs = gf256(rhsList)
             assert lhs * rhs == rhs * lhs
             assert lhs * rhs == lhs.mul(rhs)
-    return 'OK'
+    return
 
 def test_moduluOverLargerFields():
     parityLength = 15
@@ -375,8 +375,35 @@ def test_gf256MultiplicationTable():
         for rhs in keys:
             for b in wan.timesTable[lhs][rhs]:
                 assert(b == 0 or b == 1)
-                
-            
+
+def test_adHocgf128SameAsUsingBase():
+    from arithmetic import reedSolomonProjectDir, gfBase, G_7_1
+    class gf128UsingAbstract(gfBase):
+        @property
+        def polynomialName(self):
+            return G_7_1
+        @property
+        def lengthInBits(self):
+            return 7
+        
+        @property
+        def pathToInverseTable(self):
+            return reedSolomonProjectDir + "/cachedArithmetic/gf128Inverse.npy"
+        
+        @property
+        def pathToExponentTable(self):
+            return reedSolomonProjectDir + "/cachedArithmetic/gf128Exponent.npy"
+        
+        @property
+        def pathToLogTable(self):
+            return reedSolomonProjectDir + "/cachedArithmetic/gf128Log.npy"
+        
+        @property
+        def pathToTimesTable(self):
+            return None
+    e = gf128UsingAbstract(1)
+    
+           
 if __name__ == "__main__":
     #test_multiplicationModuluBug()
     #test_lift()
@@ -398,8 +425,10 @@ if __name__ == "__main__":
     #test_polynomialTimesOverLargerFields()
     #test_gf256MultiplicationTable()
     #test_gf256Multiplication()
+    test_gf256CachedMultiplication()
     #test_comparisonGf128()
     #test_reproduceGf256MulBug()
     #test_timesScalarBugReproduction()
     #test_reproduceModuluBug()
+    #test_adHocgf128SameAsUsingBase()
     pass
