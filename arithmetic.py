@@ -282,20 +282,26 @@ class polynomial():
             return polynomial(coefficients = newCoefficients)
         else:
             return self
+    
+    def scalarType(self):
+        return self.coefficeints[0].__class__
         
     def d(self):
-        # This only works over GF(2):
-        if len(self.coefficients) % 2 == 0:
-            length = len(self.coefficients)
+        # This only works over GF(2), since (d/dx)(x^2) == 0 over GF(2)
+        if self.order() == 0:
+            return polynomial(self.scalarType()(0))
         else:
-            length = len(self.coefficients) + 1
-        mask = np.arange(0, length, 2)
-        newCoefficients = copy.deepcopy(self.coefficients)
-        # Indices with even power will have zero contribution to the derivative over GF(2)
-        newCoefficients[mask] = 0
-        #Now reduce the degree of every mono by 1
-        newCoefficients.pop()
-        return polynomial(newCoefficients)
+            newCoefficients = []
+            # reduce the degree of every monomial by 1
+            for m in range(1, len(self.coefficients), 1):
+                print(m)
+                if m % 2 == 0:
+                    # Indices with even power will have zero contribution to the derivative over GF(2)
+                    newCoefficients.append(self.scalarType(0))
+                else:
+                    newCoefficients.append(self.coefficients[m])
+            result = polynomial(newCoefficients)
+            return result
     
         
     def modulu(self, divisor):
@@ -760,6 +766,8 @@ class gf256(polynomial):
         return result
         
     def inverse(self):
+        if np.all(self.coefficients == 0):
+            raise ZeroDivisionError
         return self.__class__(self.inverseTable[str(self.getValue())]) 
 
     

@@ -10,7 +10,7 @@ from arithmetic import gf128, generateExponentAndLogTables, polynomial
 from arithmetic import polynomial as polynomialClass
 import numpy as np
 def test_keyEquationSolver():
-    #Testing the Todd K. Moon version using example on page 281 (laboratory 6 ex. 2)
+    #Testing the Todd K. Moon version using an example on page 281 (laboratory 6 ex. 2)
     # As well as table 6.5 on page 259
     #|K | S[k] | discrepancyK | cX          | L | pX   | l | oldDiscrepancy
     #|1 | 1    | 1            | 1+x         | 1 | 1    | 1 | 1
@@ -73,4 +73,7 @@ def test_keyEquationSolver_bug_connection_polynomial_for_one_error_explicit_calc
     explicitConnectionX = polynomial(coefficients = [lambda1, lambda0])
     assert explicitConnectionX == cX
 
+if __name__ =="__main__":
+    test
+    pass
     

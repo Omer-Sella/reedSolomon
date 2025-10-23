@@ -403,7 +403,18 @@ def test_adHocgf128SameAsUsingBase():
             return None
     e = gf128UsingAbstract(1)
     
-           
+def test_derivativeBugReproduction1():
+    pX = polynomial([gf256([0, 0, 0, 0, 0, 0, 1 ,0]), gf256([0, 0, 0 ,0 ,0 ,0 ,0 ,1])])
+    pDerivativeX = pX.d()
+    assert(pDerivative.order() == 0)
+    assert(pDerivative.coefficients[0] == gf256([0, 0, 0, 0, 0, 0, 1 ,0]))
+    
+def test_derivativeBugReproduction1():
+    pX = polynomial([gf256([0, 0, 0, 0, 0, 0, 1 ,0])])
+    pDerivativeX = pX.d()
+    assert(pDerivative.order() == 0)
+    assert(pDerivative.coefficients[0] == gf256([0, 0, 0, 0, 0, 0, 0 ,0]))
+    
 if __name__ == "__main__":
     #test_multiplicationModuluBug()
     #test_lift()

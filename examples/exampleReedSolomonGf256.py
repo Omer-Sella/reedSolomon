@@ -61,17 +61,18 @@ codewordX = codewordX + parityX
 #generatorPolynomialX.printValues()
 #codewordX.printValues()
 modulusX = codewordX.modulu(generatorPolynomialX)
-print("The codeword polynomial modulu the generator polynial should be the all 0 polynomial:")
+#print("The codeword polynomial modulu the generator polynial should be the all 0 polynomial:")
 modulusX.printValues()
-print(modulusX == polynomial([gf256(0)]))
+#print(modulusX == polynomial([gf256(0)]))
 
 #Now let's flip some bits:
 #noiseX = polynomial([gf256(0) for i in range(CODEWORD_LENGTH)])
 #noiseX.coefficients[0] = wan #Reminder - wan = [0,0,0,0,0,0,0,1]
-
 receivedBinary = codewordX.asArray()# + noiseX
 #receivedX.coefficients[0].coefficients[0] = 1 - receivedX.coefficients[0].coefficients[0]
-receivedBinary[0] = 1 - receivedBinary[0]
+# Debug - make everything 0:
+receivedBinary = 0 * receivedBinary
+receivedBinary[-1] = 1 - receivedBinary[-1]
 correctedVector, correctionVector, errorLocatorX = bchDecoder(receivedBinaryVecotor = receivedBinary, 
                                                               gfType = gf256, 
                                                               exponentDictionary = gf256.exponentTable, 

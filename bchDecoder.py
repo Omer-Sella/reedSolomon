@@ -31,7 +31,7 @@ def forneyCalculator(syndromeX, errorLocatorX, t):
     Output:
         omegaX - polynomial that satisfies omegaX = syndromeX * errorLocatorX modulo x^(2t)
     """
-    omegaX = (syndromeX * errorLocatorX).ignoreFromDegree(2*t-1) #Remember that ignoreFromDegree(d) ignores everything with degree strictly greater than d
+    omegaX = (syndromeX * errorLocatorX).ignoreFromDegree(np.int32(2*t-1)) #Remember that ignoreFromDegree(d) ignores everything with degree strictly greater than d
     return omegaX
 
 
@@ -50,13 +50,17 @@ def bchDecoder(receivedBinaryVecotor, gfType, exponentDictionary, numberOfPowers
     for i in range(1, len(exponentDictionary) + 1): 
         # If \alpha ^i is a root of the error locator polynomial, then log( (\alpha ^i )^-1 ) is a location of an error.
         if (errorLocatorX.at(gfType(exponentDictionary[i % (len(exponentDictionary))]))) == 0: #Note: there is a potential speed up here: cast the entire dictionary in advance to the appropriate data type (say gf128)
+            print(i)
             # Since in GF(2^k) the multiplicative group is of order (2^k)-1, then the above value is just (codewordLengthMaximal - i) BUT (!!!) in IEEE notation the polynomials are "leading coefficient is leftmost" so it's just i ...
             #correctionVector[codewordLengthMaximal - i] = 1
             if reedSolomon== False:
                 correctionVector[i - 1] = 1
             else:
                 omegaX = forneyCalculator(polynomial(syndromes), errorLocatorX, numberOfPowers / 2)
-                correctionVector[i - 1] = (omegaX.at(exponentDictionary[i % (len(exponentDictionary))])) / (errorLocatorX.d().at(exponentDictionary[i % (len(exponentDictionary))]))
+                aux = gfType(exponentDictionary[i % (len(exponentDictionary))])
+                derivativeX = errorLocatorX.d()
+                denominator = derivativeX.at(aux)
+                correctionVector[i - 1] = (omegaX.at(gfType(exponentDictionary[i % (len(exponentDictionary))]))) / denominator
     correctedVector = (receivedBinaryVecotor + correctionVector[0 : len(receivedBinaryVecotor)]) %2
     return correctedVector, correctionVector, errorLocatorX #For debug, communicate the error locator as well
             
